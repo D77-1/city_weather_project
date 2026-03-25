@@ -1,0 +1,116 @@
+<!-- AQI 顶部 -->
+<view class="hero" style="background: {{levelInfo.bg}}">
+  <view class="hero-name">{{cityName}}</view>
+  <view class="hero-aqi" style="color: {{levelInfo.color}}">{{latest.aqi || '--'}}</view>
+  <view class="hero-level" style="color: {{levelInfo.color}}">{{levelInfo.text}}</view>
+</view>
+
+<!-- 天气信息 -->
+<view class="card weather-card" wx:if="{{weather.temperature != null}}">
+  <view class="card-title">当前天气</view>
+  <view class="weather-row">
+    <view class="weather-main">
+      <text class="weather-emoji">{{weather.emoji}}</text>
+      <text class="weather-cond">{{weather.condition}}</text>
+    </view>
+    <view class="weather-detail">
+      <view class="wd-item"><text class="wd-val">{{weather.temperature}}℃</text><text class="wd-label">温度</text></view>
+      <view class="wd-item"><text class="wd-val">{{weather.humidity}}%</text><text class="wd-label">湿度</text></view>
+      <view class="wd-item"><text class="wd-val">{{weather.windDirection}}风 {{weather.windSpeed}}m/s</text><text class="wd-label">风力</text></view>
+      <view class="wd-item" wx:if="{{weather.rainfall > 0}}"><text class="wd-val">{{weather.rainfall}}mm</text><text class="wd-label">降水</text></view>
+    </view>
+  </view>
+</view>
+
+<!-- 健康建议 -->
+<view class="card">
+  <view class="card-title">健康建议</view>
+  <view class="advice-text">{{advice}}</view>
+</view>
+
+<!-- 污染物浓度条 -->
+<view class="card">
+  <view class="card-title">污染物浓度</view>
+  <view class="p-row" wx:for="{{pollutants}}" wx:key="name">
+    <view class="p-label">{{item.name}}</view>
+    <view class="p-bar-wrap">
+      <view class="p-bar" style="width: {{item.percent}}%; background: {{item.over ? '#f56c6c' : '#67C23A'}}"></view>
+    </view>
+    <view class="p-val" style="color: {{item.over ? '#f56c6c' : '#303133'}}">{{item.value}}</view>
+    <view class="p-limit">/ {{item.limit}}</view>
+  </view>
+</view>
+
+<!-- 7日趋势 -->
+<view class="card">
+  <view class="card-title">近7日 AQI 趋势</view>
+  <canvas canvas-id="detailChart" class="chart-canvas"></canvas>
+</view>
+
+<!-- 未来预测 -->
+<view class="card" wx:if="{{predictions.length}}">
+  <view class="card-title">未来7日AQI预测</view>
+  <view class="pred-grid">
+    <view class="pred-item" wx:for="{{predictions}}" wx:key="date">
+      <view class="pred-date">{{item.dateShort}}</view>
+      <view class="pred-val" style="color: {{item.color}}">{{item.predicted}}</view>
+      <view class="pred-range">{{item.lower}}~{{item.upper}}</view>
+    </view>
+  </view>
+</view>
+
+<!-- 7日天气预报(真实数据) -->
+<view class="card" wx:if="{{forecast.length}}">
+  <view class="card-title">未来7日天气预报</view>
+  <scroll-view scroll-x class="fc-scroll">
+    <view class="fc-row">
+      <view class="fc-card" wx:for="{{forecast}}" wx:key="date">
+        <view class="fc-day">{{item.weekday}}</view>
+        <view class="fc-date">{{item.dateShort}}</view>
+        <view class="fc-emoji">{{item.emoji}}</view>
+        <view class="fc-text">{{item.weatherText}}</view>
+        <view class="fc-temp">{{item.tempMax}}°/{{item.tempMin}}°</view>
+        <view class="fc-rain">💧{{item.precipitation}}mm</view>
+      </view>
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 实时真实 AQI (Open-Meteo CAMS) -->
+<view class="card real-aqi-card" wx:if="{{realAqi}}">
+  <view class="card-title">实时空气质量 <text class="source-tag">真实数据</text></view>
+  <view class="real-aqi-row">
+    <view class="real-aqi-hero">
+      <text class="real-aqi-num" style="color: {{realAqi.aqi <= 50 ? '#2d6a4f' : realAqi.aqi <= 100 ? '#d4a373' : '#c1121f'}}">{{realAqi.aqi}}</text>
+      <text class="real-aqi-level">{{realAqi.qualityLevel}}</text>
+    </view>
+    <view class="real-aqi-grid">
+      <view class="raq-item"><text class="raq-val">{{realAqi.pm25}}</text><text class="raq-lbl">PM2.5</text></view>
+      <view class="raq-item"><text class="raq-val">{{realAqi.pm10}}</text><text class="raq-lbl">PM10</text></view>
+      <view class="raq-item"><text class="raq-val">{{realAqi.no2}}</text><text class="raq-lbl">NO₂</text></view>
+      <view class="raq-item"><text class="raq-val">{{realAqi.o3}}</text><text class="raq-lbl">O₃</text></view>
+    </view>
+  </view>
+  <view class="real-aqi-source">数据来源: {{realAqi.source}} · 按国标 HJ 633-2012 计算</view>
+</view>
+
+<!-- 未来5日 AQI 预报 (真实数据) -->
+<view class="card" wx:if="{{aqiForecast.length}}">
+  <view class="card-title">AQI 预报 <text class="source-tag">真实预报</text></view>
+  <scroll-view scroll-x class="fc-scroll">
+    <view class="fc-row">
+      <view class="fc-card" wx:for="{{aqiForecast}}" wx:key="date">
+        <view class="fc-date">{{item.dateShort}}</view>
+        <view class="pred-val" style="color: {{item.aqi <= 50 ? '#2d6a4f' : item.aqi <= 100 ? '#d4a373' : '#c1121f'}}">{{item.aqi}}</view>
+        <view class="fc-text">{{item.qualityLevel}}</view>
+        <view class="fc-rain">PM2.5: {{item.pm25}}</view>
+      </view>
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 底部占位 (防止 fixed 按钮遮挡内容) -->
+<view style="height: 140rpx"></view>
+
+<!-- 底部按钮 -->
+<view class="bottom-btn" bindtap="goAi">向 AI 助手咨询该城市空气质量</view>

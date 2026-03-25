@@ -1,0 +1,58 @@
+.aqi-hero {
+  margin: 24rpx;
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx;
+  text-align: center;
+}
+.city-picker {
+  font-size: 30rpx;
+  color: #606266;
+  padding: 8rpx 24rpx;
+  background: rgba(255,255,255,0.7);
+  border-radius: 24rpx;
+  display: inline-block;
+}
+.hero-aqi { font-size: 120rpx; font-weight: 800; line-height: 1.2; margin-top: 12rpx; }
+.hero-level { font-size: 36rpx; font-weight: 700; }
+.hero-advice { font-size: 24rpx; color: #606266; margin-top: 16rpx; line-height: 1.6; padding: 0 20rpx; }
+.hero-date { font-size: 22rpx; color: #909399; margin-top: 12rpx; }
+
+/* 天气简报 */
+.weather-brief {
+  display: flex; align-items: center; gap: 8rpx;
+  margin: 0 24rpx; padding: 16rpx 20rpx;
+  background: #fff; border-radius: 16rpx;
+}
+.wb-item { flex: 1; text-align: center; }
+.wb-emoji { font-size: 32rpx; }
+.wb-label { font-size: 20rpx; color: #909399; display: block; }
+.wb-val { font-size: 24rpx; font-weight: 600; color: #303133; }
+
+.pollutant-grid {
+  display: flex; flex-wrap: wrap;
+  margin: 0 24rpx; background: #fff; border-radius: 16rpx; padding: 16rpx 0;
+}
+.p-item { width: 33.33%; text-align: center; padding: 12rpx 0; }
+.p-val { font-size: 32rpx; font-weight: 700; color: #303133; }
+.p-name { font-size: 22rpx; color: #606266; margin-top: 4rpx; }
+.p-unit { font-size: 18rpx; color: #909399; }
+
+.section {
+  margin: 24rpx; background: #fff; border-radius: 16rpx; padding: 24rpx;
+}
+.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; color: #303133; }
+.trend-canvas { width: 100%; height: 280rpx; }
+
+.rank-item {
+  display: flex; align-items: center; padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.rank-num {
+  width: 44rpx; height: 44rpx; border-radius: 50%;
+  background: #ebeef5; display: flex; align-items: center; justify-content: center;
+  font-size: 24rpx; font-weight: 600; color: #606266; margin-right: 16rpx;
+}
+.rank-num.top { background: #f56c6c; color: #fff; }
+.rank-name { flex: 1; font-size: 28rpx; color: #303133; }
+.rank-aqi { font-size: 32rpx; font-weight: 700; margin-right: 12rpx; }
+.rank-level { font-size: 22rpx; color: #909399; width: 120rpx; text-align: right; }

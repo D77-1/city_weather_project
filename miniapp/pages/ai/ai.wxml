@@ -1,0 +1,43 @@
+<scroll-view scroll-y class="msg-list" scroll-into-view="{{scrollToId}}">
+
+  <!-- 欢迎语 -->
+  <view wx:if="{{messages.length === 0}}" class="welcome">
+    <view class="welcome-icon">🤖</view>
+    <view class="welcome-title">AI 空气质量助手</view>
+    <view class="welcome-text">我可以解读空气质量数据、分析趋势、提供健康建议</view>
+    <view class="quick-list">
+      <view class="quick-btn" wx:for="{{quickQuestions}}" wx:key="*this" bindtap="sendQuick" data-text="{{item}}">{{item}}</view>
+    </view>
+  </view>
+
+  <!-- 消息 -->
+  <view wx:for="{{messages}}" wx:key="index" id="msg-{{index}}" class="msg-row {{item.role}}">
+    <view class="msg-bubble {{item.role}}">
+      <text class="msg-text">{{item.content}}</text>
+      <view wx:if="{{item.tokens}}" class="msg-meta">{{item.tokens}} tokens · {{item.elapsed}}ms</view>
+    </view>
+  </view>
+
+  <!-- 打字中 -->
+  <view wx:if="{{loading}}" class="msg-row ai">
+    <view class="msg-bubble ai">
+      <view class="typing"><view class="dot"></view><view class="dot"></view><view class="dot"></view></view>
+    </view>
+  </view>
+
+  <view id="msg-bottom" style="height: 20rpx;"></view>
+</scroll-view>
+
+<!-- 输入区 -->
+<view class="input-area">
+  <input
+    value="{{inputText}}"
+    class="input-box"
+    placeholder="输入你的问题..."
+    disabled="{{loading}}"
+    confirm-type="send"
+    bindinput="onInput"
+    bindconfirm="sendMessage"
+  />
+  <view class="send-btn {{loading || !inputText ? 'disabled' : ''}}" bindtap="sendMessage">发送</view>
+</view>

@@ -1,0 +1,58 @@
+page { display: flex; flex-direction: column; height: 100vh; background: #f5f6fa; }
+
+.msg-list { flex: 1; padding: 24rpx; padding-bottom: 140rpx; }
+
+.welcome { text-align: center; padding: 80rpx 40rpx; }
+.welcome-icon { font-size: 80rpx; }
+.welcome-title { font-size: 36rpx; font-weight: 700; margin: 16rpx 0; color: #303133; }
+.welcome-text { font-size: 26rpx; color: #909399; line-height: 1.6; }
+.quick-list { margin-top: 32rpx; display: flex; flex-direction: column; gap: 16rpx; align-items: center; }
+.quick-btn {
+  background: #fff; border: 1rpx solid #dcdfe6; border-radius: 32rpx;
+  padding: 16rpx 32rpx; font-size: 26rpx; color: #409EFF;
+}
+
+.msg-row { display: flex; margin-bottom: 20rpx; }
+.msg-row.user { justify-content: flex-end; }
+.msg-row.ai { justify-content: flex-start; }
+
+.msg-bubble {
+  max-width: 80%; padding: 20rpx 24rpx;
+  border-radius: 20rpx; font-size: 28rpx; line-height: 1.6; word-break: break-all;
+}
+.msg-bubble.user {
+  background: #409EFF; color: #fff; border-bottom-right-radius: 4rpx;
+}
+.msg-bubble.ai {
+  background: #fff; color: #303133; border-bottom-left-radius: 4rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+}
+.msg-meta { font-size: 20rpx; color: #c0c4cc; margin-top: 8rpx; }
+
+.typing { display: flex; gap: 8rpx; padding: 8rpx 0; }
+.dot {
+  width: 12rpx; height: 12rpx; border-radius: 50%;
+  background: #c0c4cc; animation: blink 1.4s infinite both;
+}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%,80%,100% { opacity: 0.3; } 40% { opacity: 1; } }
+
+.input-area {
+  display: flex; align-items: center; gap: 16rpx;
+  padding: 16rpx 24rpx; background: #fff; border-top: 1rpx solid #ebeef5;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+}
+.input-box {
+  flex: 1; height: 72rpx; background: #f5f7fa; border-radius: 36rpx;
+  padding: 0 28rpx; font-size: 28rpx;
+}
+.send-btn {
+  width: 120rpx; height: 72rpx;
+  background: linear-gradient(135deg, #409EFF, #67C23A);
+  color: #fff; border-radius: 36rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28rpx; font-weight: 600;
+}
+.send-btn.disabled { opacity: 0.5; }

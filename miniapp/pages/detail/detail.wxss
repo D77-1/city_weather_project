@@ -1,0 +1,90 @@
+.hero {
+  padding: 40rpx 32rpx; text-align: center;
+  border-radius: 0 0 32rpx 32rpx;
+}
+.hero-name { font-size: 32rpx; color: #606266; }
+.hero-aqi { font-size: 100rpx; font-weight: 800; line-height: 1.2; }
+.hero-level { font-size: 34rpx; font-weight: 700; }
+
+.card {
+  margin: 24rpx; background: #fff; border-radius: 16rpx; padding: 24rpx;
+}
+.card-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; }
+.advice-text { font-size: 26rpx; color: #606266; line-height: 1.7; }
+
+/* 天气卡片 */
+.weather-row { display: flex; align-items: center; }
+.weather-main { text-align: center; width: 160rpx; }
+.weather-emoji { font-size: 56rpx; display: block; }
+.weather-cond { font-size: 28rpx; font-weight: 600; color: #303133; }
+.weather-detail { flex: 1; display: flex; flex-wrap: wrap; gap: 8rpx; }
+.wd-item {
+  flex: 1; min-width: 140rpx; text-align: center;
+  background: #f5f7fa; border-radius: 12rpx; padding: 12rpx 8rpx;
+}
+.wd-val { font-size: 26rpx; font-weight: 700; color: #303133; display: block; }
+.wd-label { font-size: 20rpx; color: #909399; }
+
+/* 污染物浓度 */
+.p-row { display: flex; align-items: center; padding: 12rpx 0; }
+.p-label { width: 100rpx; font-size: 24rpx; color: #606266; }
+.p-bar-wrap {
+  flex: 1; height: 16rpx; background: #f0f0f0;
+  border-radius: 8rpx; margin: 0 16rpx; overflow: hidden;
+}
+.p-bar { height: 100%; border-radius: 8rpx; }
+.p-val { font-size: 26rpx; font-weight: 600; width: 80rpx; text-align: right; }
+.p-limit { font-size: 20rpx; color: #c0c4cc; width: 60rpx; }
+
+.chart-canvas { width: 100%; height: 300rpx; }
+
+.pred-grid { display: flex; flex-wrap: wrap; gap: 12rpx; }
+.pred-item {
+  flex: 1; min-width: 130rpx; text-align: center;
+  background: #f5f7fa; border-radius: 12rpx; padding: 16rpx 8rpx;
+}
+.pred-date { font-size: 22rpx; color: #909399; }
+.pred-val { font-size: 36rpx; font-weight: 700; margin: 4rpx 0; }
+.pred-range { font-size: 18rpx; color: #c0c4cc; }
+
+/* 天气预报 */
+.fc-scroll { white-space: nowrap; }
+.fc-row { display: inline-flex; gap: 12rpx; }
+.fc-card {
+  width: 140rpx; text-align: center;
+  background: #f5f7fa; border-radius: 12rpx; padding: 14rpx 8rpx;
+  display: inline-block;
+}
+.fc-day { font-size: 24rpx; font-weight: 600; color: #303133; }
+.fc-date { font-size: 20rpx; color: #909399; }
+.fc-emoji { font-size: 44rpx; margin: 6rpx 0; }
+.fc-text { font-size: 20rpx; color: #606266; }
+.fc-temp { font-size: 26rpx; font-weight: 700; color: #303133; margin-top: 4rpx; }
+.fc-rain { font-size: 18rpx; color: #909399; }
+
+.bottom-btn {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 120rpx;
+  background: linear-gradient(135deg, #409EFF, #67C23A);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 30rpx; font-weight: 600;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 真实 AQI 卡片 */
+.source-tag {
+  font-size: 20rpx; color: #fff; background: #0d9488;
+  padding: 2rpx 12rpx; border-radius: 8rpx; margin-left: 12rpx; font-weight: 400;
+}
+.real-aqi-card { border-left: 4rpx solid #0d9488; }
+.real-aqi-row { display: flex; align-items: center; gap: 16rpx; }
+.real-aqi-hero { text-align: center; width: 140rpx; }
+.real-aqi-num { font-size: 64rpx; font-weight: 800; display: block; line-height: 1.1; }
+.real-aqi-level { font-size: 24rpx; color: #606266; }
+.real-aqi-grid { flex: 1; display: flex; flex-wrap: wrap; gap: 8rpx; }
+.raq-item {
+  flex: 1; min-width: 120rpx; text-align: center;
+  background: #f0faf8; border-radius: 12rpx; padding: 10rpx 6rpx;
+}
+.raq-val { font-size: 28rpx; font-weight: 700; color: #303133; display: block; }
+.raq-lbl { font-size: 20rpx; color: #909399; }
+.real-aqi-source { font-size: 20rpx; color: #909399; margin-top: 12rpx; }
