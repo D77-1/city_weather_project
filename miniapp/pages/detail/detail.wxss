@@ -1,70 +1,73 @@
 .hero {
   padding: 40rpx 32rpx; text-align: center;
   border-radius: 0 0 32rpx 32rpx;
+  backdrop-filter: blur(8px);
 }
-.hero-name { font-size: 32rpx; color: #606266; }
-.hero-aqi { font-size: 100rpx; font-weight: 800; line-height: 1.2; }
+.hero-name { font-size: 32rpx; color: #475569; }
+.hero-aqi { font-size: 100rpx; font-weight: 800; line-height: 1.2; letter-spacing: -4rpx; font-family: 'DIN Alternate', 'Menlo', monospace; }
 .hero-level { font-size: 34rpx; font-weight: 700; }
 
 .card {
-  margin: 24rpx; background: #fff; border-radius: 16rpx; padding: 24rpx;
+  margin: 20rpx 24rpx; background: rgba(255, 255, 255, 0.88); border-radius: 20rpx; padding: 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
+  border: 1rpx solid rgba(226, 232, 240, 0.6);
 }
-.card-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; }
-.advice-text { font-size: 26rpx; color: #606266; line-height: 1.7; }
+.card-title { font-size: 30rpx; font-weight: 700; margin-bottom: 16rpx; color: #1e293b; }
+.advice-text { font-size: 26rpx; color: #475569; line-height: 1.7; }
 
-/* 天气卡片 */
+/* 天气卡片 — CSS 图标 */
 .weather-row { display: flex; align-items: center; }
-.weather-main { text-align: center; width: 160rpx; }
-.weather-emoji { font-size: 56rpx; display: block; }
-.weather-cond { font-size: 28rpx; font-weight: 600; color: #303133; }
+.weather-main { text-align: center; width: 160rpx; display: flex; flex-direction: column; align-items: center; gap: 8rpx; }
+.weather-svg { width: 64rpx; height: 64rpx; }
+.weather-cond { font-size: 28rpx; font-weight: 600; color: #1e293b; }
 .weather-detail { flex: 1; display: flex; flex-wrap: wrap; gap: 8rpx; }
 .wd-item {
   flex: 1; min-width: 140rpx; text-align: center;
-  background: #f5f7fa; border-radius: 12rpx; padding: 12rpx 8rpx;
+  background: #f1f5f9; border-radius: 12rpx; padding: 12rpx 8rpx;
 }
-.wd-val { font-size: 26rpx; font-weight: 700; color: #303133; display: block; }
-.wd-label { font-size: 20rpx; color: #909399; }
+.wd-val { font-size: 26rpx; font-weight: 700; color: #1e293b; display: block; }
+.wd-label { font-size: 20rpx; color: #94a3b8; }
 
 /* 污染物浓度 */
 .p-row { display: flex; align-items: center; padding: 12rpx 0; }
-.p-label { width: 100rpx; font-size: 24rpx; color: #606266; }
+.p-label { width: 100rpx; font-size: 24rpx; color: #475569; }
 .p-bar-wrap {
-  flex: 1; height: 16rpx; background: #f0f0f0;
+  flex: 1; height: 16rpx; background: #f1f5f9;
   border-radius: 8rpx; margin: 0 16rpx; overflow: hidden;
 }
-.p-bar { height: 100%; border-radius: 8rpx; }
-.p-val { font-size: 26rpx; font-weight: 600; width: 80rpx; text-align: right; }
-.p-limit { font-size: 20rpx; color: #c0c4cc; width: 60rpx; }
+.p-bar { height: 100%; border-radius: 8rpx; transition: width 0.5s ease; }
+.p-val { font-size: 26rpx; font-weight: 700; width: 80rpx; text-align: right; font-family: 'DIN Alternate', monospace; }
+.p-limit { font-size: 20rpx; color: #94a3b8; width: 60rpx; }
 
 .chart-canvas { width: 100%; height: 300rpx; }
 
 .pred-grid { display: flex; flex-wrap: wrap; gap: 12rpx; }
 .pred-item {
   flex: 1; min-width: 130rpx; text-align: center;
-  background: #f5f7fa; border-radius: 12rpx; padding: 16rpx 8rpx;
+  background: #f1f5f9; border-radius: 12rpx; padding: 16rpx 8rpx;
 }
-.pred-date { font-size: 22rpx; color: #909399; }
-.pred-val { font-size: 36rpx; font-weight: 700; margin: 4rpx 0; }
-.pred-range { font-size: 18rpx; color: #c0c4cc; }
+.pred-date { font-size: 22rpx; color: #94a3b8; }
+.pred-val { font-size: 36rpx; font-weight: 800; margin: 4rpx 0; font-family: 'DIN Alternate', monospace; }
+.pred-range { font-size: 18rpx; color: #94a3b8; }
 
 /* 天气预报 */
 .fc-scroll { white-space: nowrap; }
 .fc-row { display: inline-flex; gap: 12rpx; }
 .fc-card {
   width: 140rpx; text-align: center;
-  background: #f5f7fa; border-radius: 12rpx; padding: 14rpx 8rpx;
+  background: #f1f5f9; border-radius: 12rpx; padding: 14rpx 8rpx;
   display: inline-block;
 }
-.fc-day { font-size: 24rpx; font-weight: 600; color: #303133; }
-.fc-date { font-size: 20rpx; color: #909399; }
-.fc-emoji { font-size: 44rpx; margin: 6rpx 0; }
-.fc-text { font-size: 20rpx; color: #606266; }
-.fc-temp { font-size: 26rpx; font-weight: 700; color: #303133; margin-top: 4rpx; }
-.fc-rain { font-size: 18rpx; color: #909399; }
+.fc-day { font-size: 24rpx; font-weight: 600; color: #1e293b; }
+.fc-date { font-size: 20rpx; color: #94a3b8; }
+.fc-svg { width: 44rpx; height: 44rpx; margin: 6rpx auto; display: block; }
+.fc-text { font-size: 20rpx; color: #475569; }
+.fc-temp { font-size: 26rpx; font-weight: 700; color: #1e293b; margin-top: 4rpx; }
+.fc-rain { font-size: 18rpx; color: #94a3b8; }
 
 .bottom-btn {
   position: fixed; bottom: 0; left: 0; right: 0; height: 120rpx;
-  background: linear-gradient(135deg, #409EFF, #67C23A);
+  background: linear-gradient(135deg, #0d9488, #059669);
   color: #fff; display: flex; align-items: center; justify-content: center;
   font-size: 30rpx; font-weight: 600;
   padding-bottom: env(safe-area-inset-bottom);
@@ -78,13 +81,13 @@
 .real-aqi-card { border-left: 4rpx solid #0d9488; }
 .real-aqi-row { display: flex; align-items: center; gap: 16rpx; }
 .real-aqi-hero { text-align: center; width: 140rpx; }
-.real-aqi-num { font-size: 64rpx; font-weight: 800; display: block; line-height: 1.1; }
-.real-aqi-level { font-size: 24rpx; color: #606266; }
+.real-aqi-num { font-size: 64rpx; font-weight: 800; display: block; line-height: 1.1; font-family: 'DIN Alternate', monospace; }
+.real-aqi-level { font-size: 24rpx; color: #475569; }
 .real-aqi-grid { flex: 1; display: flex; flex-wrap: wrap; gap: 8rpx; }
 .raq-item {
   flex: 1; min-width: 120rpx; text-align: center;
-  background: #f0faf8; border-radius: 12rpx; padding: 10rpx 6rpx;
+  background: #f1f5f9; border-radius: 12rpx; padding: 10rpx 6rpx;
 }
-.raq-val { font-size: 28rpx; font-weight: 700; color: #303133; display: block; }
-.raq-lbl { font-size: 20rpx; color: #909399; }
-.real-aqi-source { font-size: 20rpx; color: #909399; margin-top: 12rpx; }
+.raq-val { font-size: 28rpx; font-weight: 700; color: #1e293b; display: block; font-family: 'DIN Alternate', monospace; }
+.raq-lbl { font-size: 20rpx; color: #94a3b8; }
+.real-aqi-source { font-size: 20rpx; color: #94a3b8; margin-top: 12rpx; }

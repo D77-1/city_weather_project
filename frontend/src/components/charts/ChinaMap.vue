@@ -34,7 +34,7 @@ const mapOption = computed(() => ({
     text: '全国空气质量分布',
     left: 'center',
     top: 10,
-    textStyle: { color: '#e0e6ed', fontSize: 16 },
+    textStyle: { color: '#94a3b8', fontSize: 15, fontWeight: 600 },
   },
   tooltip: {
     trigger: 'item',
@@ -55,7 +55,7 @@ const mapOption = computed(() => ({
     map: 'china',
     roam: true,
     zoom: 1.2,
-    itemStyle: { areaColor: '#1b2838', borderColor: '#3a4a5c' },
+    itemStyle: { areaColor: '#162032', borderColor: '#334155' },
     emphasis: {
       itemStyle: { areaColor: '#2a475e' },
       label: { show: true, color: '#fff' },
@@ -114,7 +114,7 @@ onMounted(async () => {
   justify-content: center;
   gap: 12px;
   color: #909399;
-  background: #0d1b2a;
+  background: var(--bg-map, #0f1a2e);
   border-radius: 8px;
 }
 </style>

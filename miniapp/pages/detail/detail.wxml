@@ -5,19 +5,19 @@
   <view class="hero-level" style="color: {{levelInfo.color}}">{{levelInfo.text}}</view>
 </view>
 
-<!-- 天气信息 -->
+<!-- 天气信息 — CSS 图标替代 emoji -->
 <view class="card weather-card" wx:if="{{weather.temperature != null}}">
   <view class="card-title">当前天气</view>
   <view class="weather-row">
     <view class="weather-main">
-      <text class="weather-emoji">{{weather.emoji}}</text>
+      <image src="{{weather.icon}}" class="weather-svg" mode="aspectFit" />
       <text class="weather-cond">{{weather.condition}}</text>
     </view>
     <view class="weather-detail">
-      <view class="wd-item"><text class="wd-val">{{weather.temperature}}℃</text><text class="wd-label">温度</text></view>
-      <view class="wd-item"><text class="wd-val">{{weather.humidity}}%</text><text class="wd-label">湿度</text></view>
-      <view class="wd-item"><text class="wd-val">{{weather.windDirection}}风 {{weather.windSpeed}}m/s</text><text class="wd-label">风力</text></view>
-      <view class="wd-item" wx:if="{{weather.rainfall > 0}}"><text class="wd-val">{{weather.rainfall}}mm</text><text class="wd-label">降水</text></view>
+      <view class="wd-item"><text class="wd-val num">{{weather.temperature}}℃</text><text class="wd-label">温度</text></view>
+      <view class="wd-item"><text class="wd-val num">{{weather.humidity}}%</text><text class="wd-label">湿度</text></view>
+      <view class="wd-item"><text class="wd-val num">{{weather.windDirection}}风 {{weather.windSpeed}}m/s</text><text class="wd-label">风力</text></view>
+      <view class="wd-item" wx:if="{{weather.rainfall > 0}}"><text class="wd-val num">{{weather.rainfall}}mm</text><text class="wd-label">降水</text></view>
     </view>
   </view>
 </view>
@@ -67,10 +67,10 @@
       <view class="fc-card" wx:for="{{forecast}}" wx:key="date">
         <view class="fc-day">{{item.weekday}}</view>
         <view class="fc-date">{{item.dateShort}}</view>
-        <view class="fc-emoji">{{item.emoji}}</view>
+        <image src="{{item.icon}}" class="fc-svg" mode="aspectFit" />
         <view class="fc-text">{{item.weatherText}}</view>
-        <view class="fc-temp">{{item.tempMax}}°/{{item.tempMin}}°</view>
-        <view class="fc-rain">💧{{item.precipitation}}mm</view>
+        <view class="fc-temp num">{{item.tempMax}}°/{{item.tempMin}}°</view>
+        <view class="fc-rain">降水 {{item.precipitation}}mm</view>
       </view>
     </view>
   </scroll-view>

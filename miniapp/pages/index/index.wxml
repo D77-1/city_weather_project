@@ -1,46 +1,49 @@
-<!--pages/index/index.wxml-->
-
-<!-- AQI 大卡片 -->
+<!-- AQI 大卡片 — 渐变背景 -->
 <view class="aqi-hero" style="background: {{levelInfo.bg}}">
   <picker value="{{cityIndex}}" range="{{cityNames}}" bindchange="onCityChange">
     <view class="city-picker">{{currentCity.cityName || '选择城市'}} ▼</view>
   </picker>
-  <view class="hero-aqi" style="color: {{levelInfo.color}}">{{currentCity.aqi || '--'}}</view>
+  <view class="hero-aqi num" style="color: {{levelInfo.color}}">{{currentCity.aqi || '--'}}</view>
   <view class="hero-level" style="color: {{levelInfo.color}}">{{levelInfo.text}}</view>
   <view class="hero-advice">{{advice}}</view>
   <view class="hero-date">{{currentCity.recordDate}}</view>
 </view>
 
-<!-- 天气简报 -->
+<!-- 天气简报 — CSS 图标替代 emoji -->
 <view class="weather-brief" wx:if="{{currentCity.temperature != null}}">
-  <view class="wb-item"><text class="wb-emoji">{{weatherEmoji}}</text><text class="wb-val">{{currentCity.weatherCondition}}</text></view>
-  <view class="wb-item"><text class="wb-label">温度</text><text class="wb-val">{{currentCity.temperature}}℃</text></view>
-  <view class="wb-item"><text class="wb-label">湿度</text><text class="wb-val">{{currentCity.humidity}}%</text></view>
-  <view class="wb-item"><text class="wb-label">风力</text><text class="wb-val">{{currentCity.windDirection}}风 {{currentCity.windSpeed}}m/s</text></view>
+  <view class="wb-main">
+    <image src="{{weatherIcon.icon}}" class="wb-svg" mode="aspectFit" />
+    <view class="wb-cond">{{currentCity.weatherCondition}}</view>
+  </view>
+  <view class="wb-divider"></view>
+  <view class="wb-item"><text class="wb-val num">{{currentCity.temperature}}℃</text><text class="wb-label">温度</text></view>
+  <view class="wb-item"><text class="wb-val num">{{currentCity.humidity}}%</text><text class="wb-label">湿度</text></view>
+  <view class="wb-item"><text class="wb-val num">{{currentCity.windSpeed}}m/s</text><text class="wb-label">{{currentCity.windDirection}}风</text></view>
+  <view class="wb-item" wx:if="{{currentCity.rainfall > 0}}"><text class="wb-val num">{{currentCity.rainfall}}mm</text><text class="wb-label">降水</text></view>
 </view>
 
-<!-- 六项指标 -->
+<!-- 六项指标 — 不对称网格 -->
 <view class="pollutant-grid" wx:if="{{currentCity.aqi}}">
   <view class="p-item" wx:for="{{pollutants}}" wx:key="name">
-    <view class="p-val">{{item.value}}</view>
+    <view class="p-val num">{{item.value}}</view>
     <view class="p-name">{{item.name}}</view>
     <view class="p-unit">{{item.unit}}</view>
   </view>
 </view>
 
 <!-- 7日趋势 -->
-<view class="section">
-  <view class="section-title">近7日 AQI 趋势</view>
+<view class="card">
+  <view class="card-title">近7日 AQI 趋势</view>
   <canvas canvas-id="trendChart" class="trend-canvas" bindtap="goDetail"></canvas>
 </view>
 
 <!-- 排名 -->
-<view class="section">
-  <view class="section-title">全国城市排名</view>
+<view class="card">
+  <view class="card-title">全国城市排名</view>
   <view class="rank-item" wx:for="{{ranking}}" wx:key="cityId" bindtap="onRankTap" data-item="{{item}}">
     <view class="rank-num {{index < 3 ? 'top' : ''}}">{{index + 1}}</view>
     <view class="rank-name">{{item.cityName}}</view>
-    <view class="rank-aqi" style="color: {{item.color}}">{{item.aqi}}</view>
+    <view class="rank-aqi num" style="color: {{item.color}}">{{item.aqi}}</view>
     <view class="rank-level">{{item.qualityLevel}}</view>
   </view>
 </view>

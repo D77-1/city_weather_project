@@ -8,6 +8,12 @@ const routes = [
     meta: { title: '数据看板' },
   },
   {
+    path: '/analysis',
+    name: 'Analysis',
+    component: () => import('@/views/Analysis.vue'),
+    meta: { title: '数据分析' },
+  },
+  {
     path: '/city/:id',
     name: 'CityDetail',
     component: () => import('@/views/CityDetail.vue'),
@@ -29,7 +35,7 @@ const routes = [
     path: '/anomaly',
     name: 'AnomalyList',
     component: () => import('@/views/AnomalyList.vue'),
-    meta: { title: '异常事件' },
+    meta: { title: '异常管理' },
   },
 ]
 

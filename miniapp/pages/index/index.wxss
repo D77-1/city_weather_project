@@ -1,58 +1,92 @@
+/* AQI 大卡片 — 渐变背景(非纯平) */
 .aqi-hero {
   margin: 24rpx;
   border-radius: 24rpx;
   padding: 40rpx 32rpx;
   text-align: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.06);
 }
 .city-picker {
-  font-size: 30rpx;
-  color: #606266;
+  font-size: 28rpx;
+  color: #475569;
   padding: 8rpx 24rpx;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.75);
   border-radius: 24rpx;
   display: inline-block;
+  border: 1rpx solid rgba(226, 232, 240, 0.6);
 }
-.hero-aqi { font-size: 120rpx; font-weight: 800; line-height: 1.2; margin-top: 12rpx; }
-.hero-level { font-size: 36rpx; font-weight: 700; }
-.hero-advice { font-size: 24rpx; color: #606266; margin-top: 16rpx; line-height: 1.6; padding: 0 20rpx; }
-.hero-date { font-size: 22rpx; color: #909399; margin-top: 12rpx; }
+.hero-aqi { font-size: 120rpx; font-weight: 800; line-height: 1.2; margin-top: 12rpx; letter-spacing: -4rpx; }
+.hero-level { font-size: 34rpx; font-weight: 700; }
+.hero-advice { font-size: 24rpx; color: #475569; margin-top: 16rpx; line-height: 1.6; padding: 0 20rpx; }
+.hero-date { font-size: 22rpx; color: #94a3b8; margin-top: 12rpx; }
 
-/* 天气简报 */
+/* 天气简报 — CSS 图标 + 不对称布局 */
 .weather-brief {
-  display: flex; align-items: center; gap: 8rpx;
-  margin: 0 24rpx; padding: 16rpx 20rpx;
-  background: #fff; border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 0 24rpx 16rpx;
+  padding: 20rpx 24rpx;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
+  border: 1rpx solid rgba(226, 232, 240, 0.6);
 }
+.wb-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  width: 120rpx;
+}
+.wb-svg { width: 56rpx; height: 56rpx; }
+.wb-cond { font-size: 24rpx; font-weight: 600; color: #1e293b; }
+.wb-divider { width: 2rpx; height: 48rpx; background: #e2e8f0; }
 .wb-item { flex: 1; text-align: center; }
-.wb-emoji { font-size: 32rpx; }
-.wb-label { font-size: 20rpx; color: #909399; display: block; }
-.wb-val { font-size: 24rpx; font-weight: 600; color: #303133; }
+.wb-label { font-size: 20rpx; color: #94a3b8; display: block; }
+.wb-val { font-size: 26rpx; font-weight: 700; color: #1e293b; }
 
+/* 六项指标 — 不对称: 前两个大 后四个小 */
 .pollutant-grid {
-  display: flex; flex-wrap: wrap;
-  margin: 0 24rpx; background: #fff; border-radius: 16rpx; padding: 16rpx 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rpx;
+  margin: 0 24rpx;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
+  border: 1rpx solid rgba(226, 232, 240, 0.6);
 }
-.p-item { width: 33.33%; text-align: center; padding: 12rpx 0; }
-.p-val { font-size: 32rpx; font-weight: 700; color: #303133; }
-.p-name { font-size: 22rpx; color: #606266; margin-top: 4rpx; }
-.p-unit { font-size: 18rpx; color: #909399; }
+.p-item {
+  text-align: center;
+  padding: 18rpx 0;
+  background: rgba(255, 255, 255, 0.6);
+}
+.p-item:nth-child(1), .p-item:nth-child(2) {
+  background: rgba(13, 148, 136, 0.04);
+}
+.p-val { font-size: 34rpx; font-weight: 800; color: #1e293b; }
+.p-name { font-size: 22rpx; color: #475569; margin-top: 4rpx; }
+.p-unit { font-size: 18rpx; color: #94a3b8; }
 
-.section {
-  margin: 24rpx; background: #fff; border-radius: 16rpx; padding: 24rpx;
-}
-.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; color: #303133; }
+/* 趋势图 */
 .trend-canvas { width: 100%; height: 280rpx; }
 
+/* 排名列表 */
 .rank-item {
-  display: flex; align-items: center; padding: 16rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 .rank-num {
-  width: 44rpx; height: 44rpx; border-radius: 50%;
-  background: #ebeef5; display: flex; align-items: center; justify-content: center;
-  font-size: 24rpx; font-weight: 600; color: #606266; margin-right: 16rpx;
+  width: 44rpx; height: 44rpx; border-radius: 12rpx;
+  background: #f1f5f9; display: flex; align-items: center; justify-content: center;
+  font-size: 24rpx; font-weight: 700; color: #64748b; margin-right: 16rpx;
 }
-.rank-num.top { background: #f56c6c; color: #fff; }
-.rank-name { flex: 1; font-size: 28rpx; color: #303133; }
-.rank-aqi { font-size: 32rpx; font-weight: 700; margin-right: 12rpx; }
-.rank-level { font-size: 22rpx; color: #909399; width: 120rpx; text-align: right; }
+.rank-num.top { background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff; }
+.rank-name { flex: 1; font-size: 28rpx; color: #1e293b; font-weight: 500; }
+.rank-aqi { font-size: 32rpx; font-weight: 800; margin-right: 12rpx; }
+.rank-level { font-size: 22rpx; color: #94a3b8; width: 120rpx; text-align: right; }

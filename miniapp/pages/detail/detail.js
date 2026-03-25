@@ -1,4 +1,4 @@
-const { request, aqiLevel, aqiAdvice } = require('../../utils/util')
+const { request, aqiLevel, aqiAdvice, weatherIconClass } = require('../../utils/util')
 
 Page({
   data: {
@@ -60,7 +60,7 @@ Page({
       }))
 
       // 天气数据
-      const emojiMap = { '晴': '☀️', '多云': '⛅', '阴': '☁️', '小雨': '🌦️', '中雨': '🌧️', '大雨': '🌧️', '暴雨': '⛈️', '小雪': '🌨️', '中雪': '❄️', '雨夹雪': '🌨️' }
+      const wIcon = weatherIconClass(latest.weatherCondition)
       const weather = latest.temperature != null ? {
         temperature: latest.temperature,
         humidity: latest.humidity,
@@ -68,7 +68,8 @@ Page({
         windDirection: latest.windDirection,
         rainfall: latest.rainfall || 0,
         condition: latest.weatherCondition || '--',
-        emoji: emojiMap[latest.weatherCondition] || '🌤️'
+        icon: wIcon.icon,
+        label: wIcon.label
       } : {}
 
       this.setData({
@@ -81,7 +82,11 @@ Page({
 
       // 加载真实天气预报(不阻塞)
       request('/weather/forecast?city_id=' + this.data.cityId + '&days=7').then(res => {
-        this.setData({ forecast: res.forecast || [] })
+        const forecast = (res.forecast || []).map(f => {
+          const ic = weatherIconClass(f.weatherText)
+          return { ...f, icon: ic.icon, label: ic.label }
+        })
+        this.setData({ forecast })
       }).catch(() => {})
 
       // 加载真实 AQI 数据(不阻塞)

@@ -28,9 +28,10 @@
         class="theme-btn"
         @click="themeStore.toggle()"
       />
+      <el-button text size="small" class="nav-link" @click="$router.push('/analysis')">数据分析</el-button>
       <el-button text size="small" class="nav-link" @click="$router.push('/compare')">城市对比</el-button>
       <el-button text size="small" class="nav-link" @click="$router.push('/report')">数据报告</el-button>
-      <el-button text size="small" class="nav-link" @click="$router.push('/anomaly')">异常检测</el-button>
+      <el-button text size="small" class="nav-link" @click="$router.push('/anomaly')">异常管理</el-button>
     </div>
   </el-header>
 </template>

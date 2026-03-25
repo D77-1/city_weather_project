@@ -1,5 +1,5 @@
 <template>
-  <div class="health-advice" :class="level.className">
+  <div class="health-advice" :class="level.className" v-if="!dismissed">
     <div class="advice-icon">
       <Icon :icon="level.icon" width="28" />
     </div>
@@ -10,17 +10,25 @@
     <div class="advice-groups">
       <span v-for="g in level.groups" :key="g" class="group-tag">{{ g }}</span>
     </div>
+    <button class="advice-close" @click="dismissed = true" title="关闭">
+      <Icon icon="mdi:close" width="16" />
+    </button>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 
 const props = defineProps({
   aqi: { type: Number, default: 0 },
   qualityLevel: { type: String, default: '' },
 })
+
+const dismissed = ref(false)
+
+// AQI 变化时重新显示（切换城市）
+watch(() => props.aqi, () => { dismissed.value = false })
 
 const LEVELS = [
   {
@@ -75,6 +83,7 @@ const level = computed(() => {
 
 <style scoped>
 .health-advice {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -100,6 +109,22 @@ const level = computed(() => {
   background: rgba(255,255,255,0.7);
   white-space: nowrap;
 }
+.advice-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.5;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.advice-close:hover { opacity: 1; background: rgba(0,0,0,0.06); }
 
 .level-good { background: #e8f5e9; border-color: #2d6a4f; }
 .level-good .advice-title { color: #2d6a4f; }

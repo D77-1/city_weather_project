@@ -27,14 +27,39 @@ function request(url, options = {}) {
   })
 }
 
-/** AQI 转等级/颜色 */
+/** AQI 转等级/颜色 — 冷色调配色 */
 function aqiLevel(aqi) {
-  if (aqi <= 50) return { text: '优', color: '#00e400', bg: '#f0f9eb' }
-  if (aqi <= 100) return { text: '良', color: '#e6a23c', bg: '#fdf6ec' }
-  if (aqi <= 150) return { text: '轻度污染', color: '#ff7e00', bg: '#fef0e0' }
-  if (aqi <= 200) return { text: '中度污染', color: '#f56c6c', bg: '#fef0f0' }
-  if (aqi <= 300) return { text: '重度污染', color: '#99004c', bg: '#f5e0f0' }
-  return { text: '严重污染', color: '#7e0023', bg: '#f0e0e5' }
+  if (aqi <= 50) return { text: '优', color: '#059669', bg: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }
+  if (aqi <= 100) return { text: '良', color: '#d97706', bg: 'linear-gradient(135deg, #fffbeb, #fef3c7)' }
+  if (aqi <= 150) return { text: '轻度污染', color: '#ea580c', bg: 'linear-gradient(135deg, #fff7ed, #fed7aa)' }
+  if (aqi <= 200) return { text: '中度污染', color: '#dc2626', bg: 'linear-gradient(135deg, #fef2f2, #fecaca)' }
+  if (aqi <= 300) return { text: '重度污染', color: '#9f1239', bg: 'linear-gradient(135deg, #fff1f2, #fda4af)' }
+  return { text: '严重污染', color: '#7f1d1d', bg: 'linear-gradient(135deg, #fef2f2, #f87171)' }
+}
+
+/** 天气条件 → SVG 图标路径 + 文字标签（AGENTS.md: 禁止 emoji 作功能图标） */
+function weatherIconClass(condition) {
+  const map = {
+    '晴': { icon: '/images/qing.svg', label: '晴' },
+    '大部晴': { icon: '/images/qing.svg', label: '晴' },
+    '多云': { icon: '/images/duoyun.svg', label: '多云' },
+    '阴': { icon: '/images/yun.svg', label: '阴' },
+    '雾': { icon: '/images/wuqi.svg', label: '雾' },
+    '霜雾': { icon: '/images/wuqi.svg', label: '雾' },
+    '小雨': { icon: '/images/xiaoyu.svg', label: '小雨' },
+    '小毛毛雨': { icon: '/images/xiaoyu.svg', label: '小雨' },
+    '毛毛雨': { icon: '/images/xiaoyu.svg', label: '小雨' },
+    '中雨': { icon: '/images/xiaoyu.svg', label: '中雨' },
+    '大雨': { icon: '/images/dayu.svg', label: '大雨' },
+    '暴雨': { icon: '/images/dayu.svg', label: '暴雨' },
+    '阵雨': { icon: '/images/xiaoyu.svg', label: '阵雨' },
+    '小雪': { icon: '/images/daxue.svg', label: '小雪' },
+    '中雪': { icon: '/images/daxue.svg', label: '中雪' },
+    '大雪': { icon: '/images/daxue.svg', label: '大雪' },
+    '雨夹雪': { icon: '/images/daxue.svg', label: '雨夹雪' },
+    '雷暴': { icon: '/images/dayu.svg', label: '雷暴' },
+  }
+  return map[condition] || { icon: '/images/duoyun.svg', label: condition || '--' }
 }
 
 /** AQI 转健康建议 */
@@ -47,4 +72,4 @@ function aqiAdvice(aqi) {
   return '严重污染！禁止户外活动，有条件请暂离该区域。'
 }
 
-module.exports = { request, aqiLevel, aqiAdvice }
+module.exports = { request, aqiLevel, aqiAdvice, weatherIconClass }

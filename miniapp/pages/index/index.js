@@ -1,4 +1,4 @@
-const { request, aqiLevel, aqiAdvice } = require('../../utils/util')
+const { request, aqiLevel, aqiAdvice, weatherIconClass } = require('../../utils/util')
 
 Page({
   data: {
@@ -6,9 +6,9 @@ Page({
     cityNames: [],
     cityIndex: 0,
     currentCity: {},
-    levelInfo: { text: '--', color: '#909399', bg: '#f5f6fa' },
+    levelInfo: { text: '--', color: '#94a3b8', bg: 'linear-gradient(135deg, #f0f4f8, #e2e8f0)' },
     advice: '',
-    weatherEmoji: '🌤️',
+    weatherIcon: { cls: 'cloudy', label: '云' },
     pollutants: [],
     ranking: [],
     history: []
@@ -54,14 +54,12 @@ Page({
       { name: 'O₃', value: city.o3, unit: 'μg/m³' }
     ] : []
 
-    const emojiMap = { '晴': '☀️', '多云': '⛅', '阴': '☁️', '小雨': '🌦️', '中雨': '🌧️', '大雨': '🌧️', '暴雨': '⛈️', '小雪': '🌨️', '中雪': '❄️', '雨夹雪': '🌨️' }
-
     this.setData({
       currentCity: city,
       cityIndex: index,
       levelInfo: level,
       advice: aqiAdvice(city.aqi || 0),
-      weatherEmoji: emojiMap[city.weatherCondition] || '🌤️',
+      weatherIcon: weatherIconClass(city.weatherCondition),
       pollutants
     })
 
@@ -94,10 +92,12 @@ Page({
     const data = this.data.history
     if (!data.length) return
 
-    const query = wx.createSelectorQuery()
-    query.select('.trend-canvas').boundingClientRect(rect => {
-      if (!rect) return
-      const ctx = wx.createCanvasContext('trendChart', this)
+    // 延迟确保 canvas 已渲染
+    setTimeout(() => {
+      const query = wx.createSelectorQuery()
+      query.select('.trend-canvas').boundingClientRect(rect => {
+        if (!rect || !rect.width) return
+        const ctx = wx.createCanvasContext('trendChart', this)
       const W = rect.width, H = rect.height
       const pad = { top: 20, right: 15, bottom: 25, left: 35 }
       const cW = W - pad.left - pad.right
@@ -106,11 +106,11 @@ Page({
       const mx = Math.max(...vals, 100), mn = Math.min(...vals, 0)
       const rng = mx - mn || 1
 
-      ctx.setFillStyle('#ffffff')
+      ctx.setFillStyle('#f8fafc')
       ctx.fillRect(0, 0, W, H)
 
       // 网格
-      ctx.setStrokeStyle('#eee')
+      ctx.setStrokeStyle('#e2e8f0')
       ctx.setLineWidth(0.5)
       for (let i = 0; i <= 4; i++) {
         const y = pad.top + (cH / 4) * i
@@ -120,7 +120,7 @@ Page({
       }
 
       // 折线
-      ctx.beginPath(); ctx.setStrokeStyle('#409EFF'); ctx.setLineWidth(2)
+      ctx.beginPath(); ctx.setStrokeStyle('#0d9488'); ctx.setLineWidth(2)
       data.forEach((d, i) => {
         const x = pad.left + (cW / Math.max(data.length - 1, 1)) * i
         const y = pad.top + cH - ((d.aqi - mn) / rng) * cH
@@ -133,12 +133,13 @@ Page({
         const x = pad.left + (cW / Math.max(data.length - 1, 1)) * i
         const y = pad.top + cH - ((d.aqi - mn) / rng) * cH
         ctx.beginPath(); ctx.arc(x, y, 3, 0, 2 * Math.PI)
-        ctx.setFillStyle('#409EFF'); ctx.fill()
-        ctx.setFillStyle('#303133'); ctx.setFontSize(9); ctx.fillText(d.aqi, x - 6, y - 6)
-        ctx.setFillStyle('#999'); ctx.setFontSize(8); ctx.fillText(d.date.slice(5), x - 10, H - 4)
+        ctx.setFillStyle('#0d9488'); ctx.fill()
+        ctx.setFillStyle('#1e293b'); ctx.setFontSize(9); ctx.fillText(d.aqi, x - 6, y - 6)
+        ctx.setFillStyle('#94a3b8'); ctx.setFontSize(8); ctx.fillText(d.date.slice(5), x - 10, H - 4)
       })
 
       ctx.draw()
     }).exec()
+    }, 300)
   }
 })
