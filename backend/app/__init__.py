@@ -23,6 +23,13 @@ def create_app():
         from app import models  # noqa: F401 - 确保所有模型被导入
         db.create_all()
 
+        # 自动检测并补充数据到今天（开发环境自动刷新 mock 数据）
+        try:
+            from app.services.mock_data import refresh_records
+            refresh_records()
+        except Exception as e:
+            print(f'[Auto-refresh] 跳过: {e}')
+
     # 注册 CLI 命令
     _register_commands(app)
 
@@ -55,3 +62,12 @@ def _register_commands(app):
         click.echo('正在运行 IQR 异常检测...')
         anomaly_results = run_all_anomaly_detection()
         click.echo(f'异常检测完成: {len(anomaly_results)} 条记录')
+
+    @app.cli.command('refresh')
+    def refresh_command():
+        """将 mock 数据续期到今天（自动补充缺口天数）"""
+        from app.services.mock_data import refresh_records
+        total = refresh_records()
+        if total > 0:
+            click.echo(f'数据刷新完成，共补充 {total} 条记录')
+            click.echo('提示: 可运行 flask analyze 重新计算预测和异常检测')

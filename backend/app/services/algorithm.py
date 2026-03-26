@@ -38,7 +38,14 @@ def moving_average_predict(city_id, metric='aqi', window=7, forecast_days=7):
 
     # 取最近 window*4 天的历史数据用于计算（足够的回测空间）
     lookback_days = max(window * 4, 60)
-    start_date = datetime.now() - timedelta(days=lookback_days)
+
+    # 以 DB 中该城市最新记录日期为基准（避免数据过期时查不到记录）
+    latest = db.session.query(func.max(AirQualityRecord.record_time)).filter(
+        AirQualityRecord.city_id == city_id
+    ).scalar()
+    if not latest:
+        return {'history': [], 'predictions': [], 'mape': None}
+    start_date = latest - timedelta(days=lookback_days)
 
     col = getattr(AirQualityRecord, metric)
     rows = db.session.query(
@@ -150,7 +157,13 @@ def iqr_detect(city_id, metric='aqi', days=90, multiplier=1.5):
     if metric not in METRICS:
         raise ValueError(f'不支持的指标: {metric}')
 
-    start_date = datetime.now() - timedelta(days=days)
+    # 以 DB 最新记录为基准
+    latest = db.session.query(func.max(AirQualityRecord.record_time)).filter(
+        AirQualityRecord.city_id == city_id
+    ).scalar()
+    if not latest:
+        return {'q1': 0, 'q3': 0, 'iqr': 0, 'lower_bound': 0, 'upper_bound': 0, 'anomalies': []}
+    start_date = latest - timedelta(days=days)
     col = getattr(AirQualityRecord, metric)
 
     rows = db.session.query(

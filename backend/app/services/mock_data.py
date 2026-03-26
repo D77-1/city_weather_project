@@ -228,6 +228,94 @@ def seed_air_quality_records(stations, days=365):
     return total
 
 
+def refresh_records():
+    """
+    将现有 mock 数据续期到今天：
+    1. 找到数据库中最新记录日期
+    2. 从最新日期的下一天开始，生成到今天的数据
+    3. 注入约 10% 的「城市级」异常天（同城所有站点同日突变），让 IQR 检测能发现
+    """
+    from sqlalchemy import func
+    latest = db.session.query(func.max(AirQualityRecord.record_time)).scalar()
+    if not latest:
+        print('[Mock] 数据库为空，请先执行 seed 命令')
+        return 0
+
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    last_date = latest.replace(hour=0, minute=0, second=0, microsecond=0)
+    gap_days = (today - last_date).days
+    if gap_days <= 0:
+        print('[Mock] 数据已是最新，无需刷新')
+        return 0
+
+    print(f'[Mock] 检测到数据缺口: {last_date.strftime("%Y-%m-%d")} → {today.strftime("%Y-%m-%d")} ({gap_days} 天)')
+
+    # 按城市分组站点
+    stations = db.session.query(
+        MonitoringStation, City
+    ).join(City, MonitoringStation.city_id == City.id).all()
+
+    city_stations = {}
+    for station, city in stations:
+        city_stations.setdefault(city.id, (city, []))[1].append(station)
+
+    total = 0
+    for city_id, (city, city_stns) in city_stations.items():
+        profile = CITY_AQI_PROFILE.get(city.name, (60, 25))
+        base_aqi, amplitude = profile
+
+        # 预先决定哪些天是该城市的异常天（约 10%，至少 1 天）
+        spike_days = set()
+        for d in range(1, gap_days + 1):
+            if random.random() < 0.10:
+                spike_days.add(d)
+        if not spike_days and gap_days >= 1:
+            spike_days.add(random.randint(1, gap_days))
+
+        for station in city_stns:
+            station_offset = random.uniform(-8, 8)
+            records = []
+            for d in range(1, gap_days + 1):
+                record_date = last_date + timedelta(days=d)
+                day_of_year = record_date.timetuple().tm_yday
+
+                aqi, pm25, pm10, so2, no2, co, o3, primary, level = _generate_daily_record(
+                    base_aqi + station_offset, amplitude, day_of_year
+                )
+
+                # 城市级异常天：所有站点同日异常
+                if d in spike_days:
+                    spike = random.choice([1.8, 2.0, 2.2, 0.25, 0.3])
+                    aqi = max(10, min(480, int(aqi * spike)))
+                    pm25 = round(max(1, pm25 * spike), 1)
+                    pm10 = round(max(1, pm10 * spike), 1)
+                    primary = _determine_primary_pollutant(pm25, pm10, so2, no2, co, o3)
+                    level = _aqi_to_level(aqi)
+
+                temp, hum, ws, wd, rain, weather = _generate_weather(city.name, day_of_year)
+
+                records.append(AirQualityRecord(
+                    station_id=station.id,
+                    city_id=city.id,
+                    record_time=record_date,
+                    record_type='daily',
+                    aqi=aqi, pm25=pm25, pm10=pm10,
+                    so2=so2, no2=no2, co=co, o3=o3,
+                    temperature=temp, humidity=hum,
+                    wind_speed=ws, wind_direction=wd,
+                    rainfall=rain, weather_condition=weather,
+                    primary_pollutant=primary,
+                    quality_level=level,
+                ))
+
+            db.session.bulk_save_objects(records)
+            total += len(records)
+
+    db.session.commit()
+    print(f'[Mock] 已补充 {total} 条记录（{gap_days} 天 × {len(stations)} 站点）')
+    return total
+
+
 def seed_all(days=365):
     """一键生成全部模拟数据"""
     print('[Mock] 开始生成模拟数据...')

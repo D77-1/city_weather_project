@@ -1,15 +1,16 @@
 """异常检测 API"""
 from flask import request
 from app.api import api_bp
-from app.services.algorithm import iqr_detect
+from app.services.algorithm import iqr_detect, save_anomalies
 from app.models import AnomalyEvent
 from app.utils.response import success, error
+from app import db
 
 
 @api_bp.route('/anomaly/detect', methods=['POST'])
 def run_anomaly_detect():
     """
-    对指定城市执行 IQR 异常检测（实时计算）
+    对指定城市执行 IQR 异常检测（实时计算 + 持久化结果）
     Body JSON: { cityId, metric?, days?, multiplier? }
     """
     data = request.get_json(silent=True) or {}
@@ -25,6 +26,13 @@ def run_anomaly_detect():
         result = iqr_detect(city_id, metric, days, multiplier)
     except ValueError as e:
         return error(str(e))
+
+    # 清除该城市+指标的旧异常记录，再保存新结果
+    AnomalyEvent.query.filter_by(city_id=city_id, metric_name=metric).delete()
+    db.session.commit()
+
+    if result['anomalies']:
+        save_anomalies(city_id, metric, result)
 
     return success(result)
 

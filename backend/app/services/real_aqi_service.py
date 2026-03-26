@@ -228,17 +228,14 @@ def get_aqi_history(lat, lng, days=30):
     end = datetime.now().strftime('%Y-%m-%d')
     start = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
-    ARCHIVE_AQ = 'https://air-quality-api.open-meteo.com/v1/air-quality'
-
     try:
-        resp = requests.get(ARCHIVE_AQ, params={
+        resp = requests.get(AQ_API, params={
             'latitude': lat,
             'longitude': lng,
             'hourly': 'pm2_5,pm10,nitrogen_dioxide,sulphur_dioxide,ozone,carbon_monoxide',
             'timezone': 'Asia/Shanghai',
             'start_date': start,
             'end_date': end,
-            'past_days': days,
         }, timeout=15)
         resp.raise_for_status()
         hourly = resp.json().get('hourly', {})

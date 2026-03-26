@@ -119,9 +119,11 @@ Page({
     const data = this.data.history
     if (!data.length) return
 
+    // 延迟确保 canvas 已渲染（与 index.js 保持一致）
+    setTimeout(() => {
     const query = wx.createSelectorQuery()
     query.select('.chart-canvas').boundingClientRect(rect => {
-      if (!rect) return
+      if (!rect || !rect.width) return
       const ctx = wx.createCanvasContext('detailChart', this)
       const W = rect.width, H = rect.height
       const pad = { top: 20, right: 15, bottom: 25, left: 35 }
@@ -157,5 +159,6 @@ Page({
       })
       ctx.draw()
     }).exec()
+    }, 300)
   }
 })

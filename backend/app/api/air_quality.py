@@ -97,7 +97,13 @@ def get_history():
     days = request.args.get('days', 30, type=int)
     days = min(days, 365)
 
-    start_date = datetime.now() - timedelta(days=days)
+    # 以 DB 中最新记录日期为基准（而非 datetime.now()），避免数据过期时查不到记录
+    latest_date = db.session.query(func.max(AirQualityRecord.record_time)).filter(
+        AirQualityRecord.city_id == city_id
+    ).scalar()
+    if not latest_date:
+        return success([])
+    start_date = latest_date - timedelta(days=days)
 
     # 按日聚合（一个城市多个站点取均值）
     rows = db.session.query(
