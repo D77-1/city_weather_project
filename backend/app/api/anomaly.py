@@ -1,7 +1,7 @@
-"""异常检测 API"""
+"""异常检测与风险评分 API"""
 from flask import request
 from app.api import api_bp
-from app.services.algorithm import iqr_detect, save_anomalies
+from app.services.algorithm import iqr_detect, save_anomalies, calculate_risk_score
 from app.models import AnomalyEvent
 from app.utils.response import success, error
 from app import db
@@ -27,13 +27,28 @@ def run_anomaly_detect():
     except ValueError as e:
         return error(str(e))
 
-    # 清除该城市+指标的旧异常记录，再保存新结果
     AnomalyEvent.query.filter_by(city_id=city_id, metric_name=metric).delete()
     db.session.commit()
 
     if result['anomalies']:
         save_anomalies(city_id, metric, result)
 
+    return success(result)
+
+
+@api_bp.route('/risk/assess', methods=['POST'])
+def assess_risk():
+    """
+    计算指定城市综合风险评分
+    Body JSON: { cityId, forecastDays? }
+    """
+    data = request.get_json(silent=True) or {}
+    city_id = data.get('cityId')
+    if not city_id:
+        return error('缺少 cityId')
+
+    forecast_days = data.get('forecastDays', 5)
+    result = calculate_risk_score(city_id, forecast_days)
     return success(result)
 
 
@@ -62,7 +77,6 @@ def get_anomaly_list():
         query = query.filter(AnomalyEvent.status == status)
 
     limit = min(request.args.get('limit', 50, type=int), 200)
-
     events = query.order_by(AnomalyEvent.record_time.desc()).limit(limit).all()
     return success([e.to_dict() for e in events])
 
@@ -70,7 +84,6 @@ def get_anomaly_list():
 @api_bp.route('/anomaly/<int:event_id>/status', methods=['PUT'])
 def update_anomaly_status(event_id):
     """更新异常事件状态 Body: { status: 'confirmed'|'dismissed' }"""
-    from app import db
     event = AnomalyEvent.query.get(event_id)
     if not event:
         return error('异常事件不存在', 404)

@@ -30,6 +30,11 @@ export const anomalyApi = {
   updateStatus: (eventId, data) => request.put(`/anomaly/${eventId}/status`, data),
 }
 
+// 综合风险
+export const riskApi = {
+  assess: (data) => request.post('/risk/assess', data),
+}
+
 // AI
 export const aiApi = {
   getAdvice: (data) => request.post('/ai/advice', data),

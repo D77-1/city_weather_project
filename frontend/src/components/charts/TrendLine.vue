@@ -11,6 +11,8 @@ const props = defineProps({
   title: { type: String, default: 'AQI 趋势与预测' },
   height: { type: String, default: '360px' },
   metric: { type: String, default: 'AQI' },
+  algorithmLabel: { type: String, default: '预测值' },
+  referenceLabel: { type: String, default: '参考线' },
 })
 
 const lineOption = computed(() => {
@@ -20,7 +22,6 @@ const lineOption = computed(() => {
   }
 
   const labelInterval = d.dates.length > 60 ? 6 : d.dates.length > 30 ? 3 : 1
-
   const series = [
     {
       name: `${props.metric} 实际值`,
@@ -37,9 +38,9 @@ const lineOption = computed(() => {
     },
   ]
 
-  if (d.ma) {
+  if (d.ma?.some((x) => x != null)) {
     series.push({
-      name: '移动平均',
+      name: props.referenceLabel,
       type: 'line',
       data: d.ma,
       smooth: true,
@@ -49,9 +50,9 @@ const lineOption = computed(() => {
     })
   }
 
-  if (d.predicted) {
+  if (d.predicted?.some((x) => x != null)) {
     series.push({
-      name: '预测值',
+      name: props.algorithmLabel,
       type: 'line',
       data: d.predicted,
       smooth: true,
@@ -63,9 +64,7 @@ const lineOption = computed(() => {
     })
   }
 
-  // 置信区间：用上界线 + 下界线 + 中间填充，更清晰
-  if (d.upper && d.lower) {
-    // 上界虚线
+  if (d.upper?.some((x) => x != null) && d.lower?.some((x) => x != null)) {
     series.push({
       name: '预测波动范围',
       type: 'line',
@@ -74,7 +73,6 @@ const lineOption = computed(() => {
       lineStyle: { width: 1, type: 'dashed', color: 'rgba(230,162,60,0.5)' },
       z: 1,
     })
-    // 下界虚线
     series.push({
       name: '_lower',
       type: 'line',
@@ -83,8 +81,6 @@ const lineOption = computed(() => {
       lineStyle: { width: 1, type: 'dashed', color: 'rgba(230,162,60,0.5)' },
       z: 1,
     })
-    // 面积填充（上界-下界区域）
-    // 使用 custom series 模拟：lower 作为底，upper 作为顶
     series.push({
       name: '_band_base',
       type: 'line',
@@ -110,11 +106,10 @@ const lineOption = computed(() => {
     })
   }
 
-  // 图例只显示有意义的系列
   const legendData = [`${props.metric} 实际值`]
-  if (d.ma) legendData.push('移动平均')
-  if (d.predicted) legendData.push('预测值')
-  if (d.upper && d.lower) legendData.push('预测波动范围')
+  if (d.ma?.some((x) => x != null)) legendData.push(props.referenceLabel)
+  if (d.predicted?.some((x) => x != null)) legendData.push(props.algorithmLabel)
+  if (d.upper?.some((x) => x != null) && d.lower?.some((x) => x != null)) legendData.push('预测波动范围')
 
   return {
     title: { text: props.title, left: 'center', top: 5, textStyle: { fontSize: 14 } },
@@ -124,17 +119,13 @@ const lineOption = computed(() => {
         const date = params[0]?.axisValue || ''
         let html = `<b>${date}</b>`
         for (const p of params) {
-          // 隐藏辅助系列
           if (p.seriesName.startsWith('_')) continue
-          if (p.value != null) {
-            html += `<br/>${p.marker} ${p.seriesName}: ${p.value}`
-          }
+          if (p.value != null) html += `<br/>${p.marker} ${p.seriesName}: ${p.value}`
         }
-        // 查找置信区间上下界
         const upperP = params.find(p => p.seriesName === '预测波动范围')
         const lowerP = params.find(p => p.seriesName === '_lower')
         if (upperP?.value != null && lowerP?.value != null) {
-          html += `<br/><span style="color:#aaa">📊 预测在 ${lowerP.value} ~ ${upperP.value} 之间波动</span>`
+          html += `<br/><span style="color:#aaa">预测在 ${lowerP.value} ~ ${upperP.value} 之间波动</span>`
         }
         return html
       },
@@ -160,13 +151,7 @@ const lineOption = computed(() => {
       boundaryGap: false,
     },
     yAxis: { type: 'value', name: props.metric },
-    dataZoom: [
-      {
-        type: 'inside',
-        start: d.dates.length > 60 ? 40 : 0,
-        end: 100,
-      },
-    ],
+    dataZoom: [{ type: 'inside', start: d.dates.length > 60 ? 40 : 0, end: 100 }],
     series,
   }
 })
