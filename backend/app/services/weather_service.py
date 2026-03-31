@@ -7,6 +7,18 @@ import requests
 from datetime import datetime, timedelta
 from functools import lru_cache
 
+REQUEST_TIMEOUT_REALTIME = 12
+REQUEST_TIMEOUT_FORECAST = 12
+REQUEST_TIMEOUT_HISTORY = 18
+
+
+@lru_cache(maxsize=256)
+def _fetch_json(url, params_tuple, timeout):
+    params = dict(params_tuple)
+    resp = requests.get(url, params=params, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
+
 OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast'
 OPEN_METEO_ARCHIVE = 'https://archive-api.open-meteo.com/v1/archive'
 
@@ -56,7 +68,7 @@ def get_realtime_weather(lat, lng):
             weatherCode, weatherText, weatherEmoji, feelsLike, visibility, uvIndex }
     """
     try:
-        resp = requests.get(OPEN_METEO_BASE, params={
+        payload = _fetch_json(OPEN_METEO_BASE, tuple(sorted({
             'latitude': lat, 'longitude': lng,
             'current': ','.join([
                 'temperature_2m', 'relative_humidity_2m', 'apparent_temperature',
@@ -64,9 +76,8 @@ def get_realtime_weather(lat, lng):
                 'wind_direction_10m', 'surface_pressure',
             ]),
             'timezone': 'Asia/Shanghai',
-        }, timeout=8)
-        resp.raise_for_status()
-        data = resp.json().get('current', {})
+        }.items())), REQUEST_TIMEOUT_REALTIME)
+        data = payload.get('current', {})
     except Exception as e:
         print(f'[Weather] 实时天气请求失败: {e}')
         return None
@@ -99,7 +110,7 @@ def get_weather_forecast(lat, lng, days=7):
              windSpeedMax, humidity, uvIndexMax, sunrise, sunset }]
     """
     try:
-        resp = requests.get(OPEN_METEO_BASE, params={
+        payload = _fetch_json(OPEN_METEO_BASE, tuple(sorted({
             'latitude': lat, 'longitude': lng,
             'daily': ','.join([
                 'temperature_2m_max', 'temperature_2m_min', 'weather_code',
@@ -109,9 +120,8 @@ def get_weather_forecast(lat, lng, days=7):
             ]),
             'timezone': 'Asia/Shanghai',
             'forecast_days': min(days, 16),
-        }, timeout=8)
-        resp.raise_for_status()
-        daily = resp.json().get('daily', {})
+        }.items())), REQUEST_TIMEOUT_FORECAST)
+        daily = payload.get('daily', {})
     except Exception as e:
         print(f'[Weather] 天气预报请求失败: {e}')
         return []
@@ -140,6 +150,44 @@ def get_weather_forecast(lat, lng, days=7):
     return result
 
 
+def _build_history_from_daily(daily):
+    dates = daily.get('time', [])
+    result = []
+    for i, date in enumerate(dates):
+        code = (daily.get('weather_code') or [0])[i] or 0
+        temp_max = (daily.get('temperature_2m_max') or [None])[i]
+        temp_min = (daily.get('temperature_2m_min') or [None])[i]
+        temp_mean = (daily.get('temperature_2m_mean') or [None])[i]
+        if temp_mean is None and temp_max is not None and temp_min is not None:
+            temp_mean = round((temp_max + temp_min) / 2, 1)
+        result.append({
+            'date': date,
+            'tempMax': temp_max,
+            'tempMin': temp_min,
+            'tempMean': temp_mean,
+            'precipitation': (daily.get('precipitation_sum') or [0])[i] or 0,
+            'windSpeedMax': (daily.get('wind_speed_10m_max') or [None])[i],
+            'humidity': (daily.get('relative_humidity_2m_mean') or [None])[i],
+            'weatherText': _wmo_to_text(code),
+            'emoji': _wmo_to_emoji(code),
+        })
+    return result
+
+
+def _build_history_from_forecast(forecast):
+    return [{
+        'date': item.get('date'),
+        'tempMax': item.get('tempMax'),
+        'tempMin': item.get('tempMin'),
+        'tempMean': round(((item.get('tempMax') or 0) + (item.get('tempMin') or 0)) / 2, 1) if item.get('tempMax') is not None and item.get('tempMin') is not None else item.get('tempMax') or item.get('tempMin'),
+        'precipitation': item.get('precipitation', 0) or 0,
+        'windSpeedMax': item.get('windSpeedMax'),
+        'humidity': item.get('humidity'),
+        'weatherText': item.get('weatherText') or _wmo_to_text(item.get('weatherCode', 0) or 0),
+        'emoji': item.get('emoji') or _wmo_to_emoji(item.get('weatherCode', 0) or 0),
+    } for item in forecast if item.get('date')]
+
+
 def get_weather_history(lat, lng, days=30):
     """
     获取过去 N 天的历史天气
@@ -148,40 +196,47 @@ def get_weather_history(lat, lng, days=30):
     start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
     try:
-        resp = requests.get(OPEN_METEO_ARCHIVE, params={
+        payload = _fetch_json(OPEN_METEO_ARCHIVE, tuple(sorted({
             'latitude': lat, 'longitude': lng,
             'start_date': start_date,
             'end_date': end_date,
             'daily': ','.join([
                 'temperature_2m_max', 'temperature_2m_min', 'temperature_2m_mean',
-                'precipitation_sum', 'wind_speed_10m_max',
-                'relative_humidity_2m_mean', 'weather_code',
+                'precipitation_sum', 'wind_speed_10m_max', 'weather_code',
             ]),
             'timezone': 'Asia/Shanghai',
-        }, timeout=10)
-        resp.raise_for_status()
-        daily = resp.json().get('daily', {})
+        }.items())), REQUEST_TIMEOUT_HISTORY)
+        daily = payload.get('daily', {})
+        result = _build_history_from_daily(daily)
+        if result:
+            return result
     except Exception as e:
         print(f'[Weather] 历史天气请求失败: {e}')
-        return []
 
-    dates = daily.get('time', [])
-    result = []
-    for i, date in enumerate(dates):
-        code = (daily.get('weather_code') or [0])[i] or 0
-        result.append({
-            'date': date,
-            'tempMax': (daily.get('temperature_2m_max') or [None])[i],
-            'tempMin': (daily.get('temperature_2m_min') or [None])[i],
-            'tempMean': (daily.get('temperature_2m_mean') or [None])[i],
-            'precipitation': (daily.get('precipitation_sum') or [0])[i] or 0,
-            'windSpeedMax': (daily.get('wind_speed_10m_max') or [None])[i],
-            'humidity': (daily.get('relative_humidity_2m_mean') or [None])[i],
-            'weatherText': _wmo_to_text(code),
-            'emoji': _wmo_to_emoji(code),
-        })
+    forecast_days = min(max(days, 1), 16)
+    fallback = _build_history_from_forecast(get_weather_forecast(lat, lng, forecast_days))
+    if fallback:
+        print('[Weather] 历史天气改用 forecast 回退数据')
+    return fallback
 
-    return result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def _weekday_cn(date_str):

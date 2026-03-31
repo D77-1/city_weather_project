@@ -30,6 +30,11 @@ export const anomalyApi = {
   updateStatus: (eventId, data) => request.put(`/anomaly/${eventId}/status`, data),
 }
 
+export const realtimeApi = {
+  getAqiHistory: (cityId, days = 30) => request.get('/aqi-history-real', { params: { city_id: cityId, days } }),
+  getRealtimeAll: (cityId) => request.get('/realtime-all', { params: { city_id: cityId } }),
+}
+
 // 综合风险
 export const riskApi = {
   assess: (data) => request.post('/risk/assess', data),

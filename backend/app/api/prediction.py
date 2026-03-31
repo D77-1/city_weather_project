@@ -1,7 +1,7 @@
 """预测结果 API"""
 from flask import request
 from app.api import api_bp
-from app.services.algorithm import run_prediction_pipeline, SUPPORTED_ALGORITHMS
+from app.services.algorithm import run_prediction_pipeline, SUPPORTED_ALGORITHMS, _algorithm_availability
 from app.models import PredictionResult
 from app.utils.response import success, error
 
@@ -29,6 +29,7 @@ def run_prediction():
         return error(str(e))
 
     result['supportedAlgorithms'] = SUPPORTED_ALGORITHMS
+    result['availability'] = _algorithm_availability()
     return success(result)
 
 

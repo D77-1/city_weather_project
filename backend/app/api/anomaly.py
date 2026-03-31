@@ -1,7 +1,7 @@
 """异常检测与风险评分 API"""
 from flask import request
 from app.api import api_bp
-from app.services.algorithm import iqr_detect, save_anomalies, calculate_risk_score
+from app.services.algorithm import run_anomaly_pipeline, save_anomalies, calculate_risk_score, SUPPORTED_ANOMALY_METHODS
 from app.models import AnomalyEvent
 from app.utils.response import success, error
 from app import db
@@ -10,8 +10,8 @@ from app import db
 @api_bp.route('/anomaly/detect', methods=['POST'])
 def run_anomaly_detect():
     """
-    对指定城市执行 IQR 异常检测（实时计算 + 持久化结果）
-    Body JSON: { cityId, metric?, days?, multiplier? }
+    对指定城市执行异常检测（实时计算 + IQR结果可持久化）
+    Body JSON: { cityId, metric?, days?, method?, compare?, multiplier? }
     """
     data = request.get_json(silent=True) or {}
     city_id = data.get('cityId')
@@ -20,19 +20,22 @@ def run_anomaly_detect():
 
     metric = data.get('metric', 'aqi')
     days = data.get('days', 90)
+    method = data.get('method', 'iqr')
+    compare = bool(data.get('compare', False))
     multiplier = data.get('multiplier', 1.5)
 
     try:
-        result = iqr_detect(city_id, metric, days, multiplier)
+        result = run_anomaly_pipeline(city_id, metric, days, method, compare, multiplier)
     except ValueError as e:
         return error(str(e))
 
-    AnomalyEvent.query.filter_by(city_id=city_id, metric_name=metric).delete()
-    db.session.commit()
+    if method == 'iqr':
+        AnomalyEvent.query.filter_by(city_id=city_id, metric_name=metric).delete()
+        db.session.commit()
+        if result['anomalies']:
+            save_anomalies(city_id, metric, result)
 
-    if result['anomalies']:
-        save_anomalies(city_id, metric, result)
-
+    result['supportedMethods'] = SUPPORTED_ANOMALY_METHODS
     return success(result)
 
 

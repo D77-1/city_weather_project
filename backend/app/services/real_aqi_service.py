@@ -8,6 +8,19 @@ API 文档: https://open-meteo.com/en/docs/air-quality-api
 import requests
 import math
 from datetime import datetime
+from functools import lru_cache
+
+REQUEST_TIMEOUT_REALTIME = 12
+REQUEST_TIMEOUT_FORECAST = 15
+REQUEST_TIMEOUT_HISTORY = 20
+
+
+@lru_cache(maxsize=256)
+def _fetch_json(params_tuple, timeout):
+    params = dict(params_tuple)
+    resp = requests.get(AQ_API, params=params, timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
 
 AQ_API = 'https://air-quality-api.open-meteo.com/v1/air-quality'
 
@@ -109,7 +122,7 @@ def get_realtime_aqi(lat, lng):
     返回: { pm25, pm10, so2, no2, co, o3, aqi, qualityLevel, primaryPollutant, updateTime, source }
     """
     try:
-        resp = requests.get(AQ_API, params={
+        payload = _fetch_json(tuple(sorted({
             'latitude': lat,
             'longitude': lng,
             'current': ','.join([
@@ -117,9 +130,8 @@ def get_realtime_aqi(lat, lng):
                 'ozone', 'carbon_monoxide',
             ]),
             'timezone': 'Asia/Shanghai',
-        }, timeout=8)
-        resp.raise_for_status()
-        current = resp.json().get('current', {})
+        }.items())), REQUEST_TIMEOUT_REALTIME)
+        current = payload.get('current', {})
     except Exception as e:
         print(f'[RealAQI] 请求失败: {e}')
         return None
@@ -157,15 +169,14 @@ def get_aqi_forecast(lat, lng, days=5):
     返回: [{ date, pm25, pm10, so2, no2, co, o3, aqi, qualityLevel }]
     """
     try:
-        resp = requests.get(AQ_API, params={
+        payload = _fetch_json(tuple(sorted({
             'latitude': lat,
             'longitude': lng,
             'hourly': 'pm2_5,pm10,nitrogen_dioxide,sulphur_dioxide,ozone,carbon_monoxide',
             'timezone': 'Asia/Shanghai',
             'forecast_days': min(days, 5),
-        }, timeout=10)
-        resp.raise_for_status()
-        hourly = resp.json().get('hourly', {})
+        }.items())), REQUEST_TIMEOUT_FORECAST)
+        hourly = payload.get('hourly', {})
     except Exception as e:
         print(f'[RealAQI] 预报请求失败: {e}')
         return []
@@ -229,16 +240,15 @@ def get_aqi_history(lat, lng, days=30):
     start = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
     try:
-        resp = requests.get(AQ_API, params={
+        payload = _fetch_json(tuple(sorted({
             'latitude': lat,
             'longitude': lng,
             'hourly': 'pm2_5,pm10,nitrogen_dioxide,sulphur_dioxide,ozone,carbon_monoxide',
             'timezone': 'Asia/Shanghai',
             'start_date': start,
             'end_date': end,
-        }, timeout=15)
-        resp.raise_for_status()
-        hourly = resp.json().get('hourly', {})
+        }.items())), REQUEST_TIMEOUT_HISTORY)
+        hourly = payload.get('hourly', {})
     except Exception as e:
         print(f'[RealAQI] 历史请求失败: {e}')
         return []

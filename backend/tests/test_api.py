@@ -61,7 +61,17 @@ test("GET /api/provinces", client.get('/api/provinces'),
 # --- 空气质量 ---
 print("\n[空气质量 API]")
 test("GET /api/air-quality/latest", client.get('/api/air-quality/latest'),
-     lambda d: assert_true(len(d) >= 20 and 'temperature' in d[0], "有天气字段"))
+     lambda d: assert_true(len(d) >= 20 and 'temperature' in d[0] and 'recordDate' in d[0], "有时间与天气字段"))
+
+test("GET /api/realtime-all", client.get('/api/realtime-all?city_id=1'),
+     lambda d: assert_true('source' in d and 'airQuality' in d and 'weather' in d, "有实时组合数据"))
+
+test("GET /api/weather/history", client.get('/api/weather/history?city_id=1&days=7'),
+     lambda d: assert_true('history' in d and isinstance(d['history'], list), "有天气历史数据"))
+
+test("GET /api/aqi-history-real", client.get('/api/aqi-history-real?city_id=1&days=7'),
+     lambda d: assert_true('history' in d and isinstance(d['history'], list), "有真实AQI历史数据"))
+
 
 test("GET /api/air-quality/history (30天)", client.get('/api/air-quality/history?city_id=1&days=30'),
      lambda d: assert_true(len(d) >= 25, f"记录数={len(d)}"))

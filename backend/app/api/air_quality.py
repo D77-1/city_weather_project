@@ -76,6 +76,7 @@ def get_latest_air_quality():
             'weatherCondition': wd.weather_condition if wd else None,
             'qualityLevel': _aqi_to_level(aqi_val),
             'recordDate': latest_date_sub.strftime('%Y-%m-%d'),
+            'dataSource': 'local_db_daily_avg',
         })
 
     return success(data)

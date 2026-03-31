@@ -5,4 +5,7 @@ pymysql==1.1.*
 python-dotenv==1.1.*
 pandas==2.2.*
 numpy==2.2.*
+statsmodels==0.14.*
+tensorflow==2.21.*
+requests==2.32.*
 dashscope==1.22.*
