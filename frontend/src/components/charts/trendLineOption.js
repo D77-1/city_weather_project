@@ -7,11 +7,19 @@ export function buildTrendLineOption({
 } = {}) {
   const d = trendData
   if (!d.dates || d.dates.length === 0) {
-    return { title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#999' } } }
+    return {
+      title: {
+        text: '暂无数据',
+        left: 'center',
+        top: 'center',
+        textStyle: { color: '#7a878b', fontFamily: 'IBM Plex Mono, Consolas, monospace', fontSize: 13 },
+      },
+    }
   }
 
   const referenceSeries = d.reference || d.ma || []
   const labelInterval = d.dates.length > 60 ? 6 : d.dates.length > 30 ? 3 : 1
+  const hasBand = d.upper?.some((x) => x != null) && d.lower?.some((x) => x != null)
   const series = [
     {
       name: `${metric} 实际值`,
@@ -19,9 +27,10 @@ export function buildTrendLineOption({
       data: d.actual,
       smooth: true,
       symbol: d.dates.length > 60 ? 'none' : 'circle',
-      symbolSize: 3,
-      lineStyle: { width: 2 },
-      itemStyle: { color: '#409EFF' },
+      symbolSize: 4,
+      lineStyle: { width: 2.5, color: '#1e5c5a' },
+      itemStyle: { color: '#1e5c5a' },
+      areaStyle: { color: 'rgba(30, 92, 90, 0.08)' },
       sampling: 'lttb',
       large: d.dates.length > 200,
       z: 3,
@@ -35,7 +44,7 @@ export function buildTrendLineOption({
       data: referenceSeries,
       smooth: true,
       symbol: 'none',
-      lineStyle: { width: 2, type: 'dashed', color: '#67C23A' },
+      lineStyle: { width: 2, type: 'dashed', color: '#7b8c87' },
       z: 2,
     })
   }
@@ -48,20 +57,20 @@ export function buildTrendLineOption({
       smooth: true,
       connectNulls: false,
       symbol: 'diamond',
-      symbolSize: 7,
-      lineStyle: { width: 3, type: 'solid', color: '#E6A23C' },
-      itemStyle: { color: '#E6A23C' },
+      symbolSize: 8,
+      lineStyle: { width: 3, type: 'solid', color: '#a8743f' },
+      itemStyle: { color: '#a8743f', borderColor: '#fff7ee', borderWidth: 2 },
       z: 4,
     })
   }
 
-  if (d.upper?.some((x) => x != null) && d.lower?.some((x) => x != null)) {
+  if (hasBand) {
     series.push({
       name: '预测波动范围',
       type: 'line',
       data: d.upper,
       symbol: 'none',
-      lineStyle: { width: 1, type: 'dashed', color: 'rgba(230,162,60,0.5)' },
+      lineStyle: { width: 1.5, type: 'dashed', color: 'rgba(168,116,63,0.46)' },
       z: 1,
     })
     series.push({
@@ -69,7 +78,7 @@ export function buildTrendLineOption({
       type: 'line',
       data: d.lower,
       symbol: 'none',
-      lineStyle: { width: 1, type: 'dashed', color: 'rgba(230,162,60,0.5)' },
+      lineStyle: { width: 1.5, type: 'dashed', color: 'rgba(168,116,63,0.46)' },
       z: 1,
     })
     series.push({
@@ -92,7 +101,7 @@ export function buildTrendLineOption({
       symbol: 'none',
       lineStyle: { width: 0 },
       stack: '_ci',
-      areaStyle: { color: 'rgba(230,162,60,0.10)' },
+      areaStyle: { color: 'rgba(168,116,63,0.10)' },
       z: 0,
     })
   }
@@ -100,48 +109,76 @@ export function buildTrendLineOption({
   const legendData = [`${metric} 实际值`]
   if (referenceSeries.some((x) => x != null)) legendData.push(referenceLabel)
   if (d.predicted?.some((x) => x != null)) legendData.push(algorithmLabel)
-  if (d.upper?.some((x) => x != null) && d.lower?.some((x) => x != null)) legendData.push('预测波动范围')
+  if (hasBand) legendData.push('预测波动范围')
 
   return {
-    title: { text: title, left: 'center', top: 5, textStyle: { fontSize: 14 } },
+    backgroundColor: 'transparent',
+    title: {
+      text: title,
+      left: 18,
+      top: 10,
+      textStyle: {
+        fontSize: 15,
+        fontWeight: 700,
+        color: '#1a2529',
+        fontFamily: 'Iowan Old Style, Palatino Linotype, Book Antiqua, Source Han Serif SC, Songti SC, serif',
+      },
+    },
     tooltip: {
       trigger: 'axis',
+      backgroundColor: 'rgba(255, 252, 247, 0.96)',
+      borderColor: 'rgba(168,116,63,0.22)',
+      borderWidth: 1,
+      textStyle: { color: '#1a2529' },
+      extraCssText: 'box-shadow: 0 14px 34px rgba(33,28,21,0.10); border-radius: 14px;',
       formatter: (params) => {
         const date = params[0]?.axisValue || ''
-        let html = `<b>${date}</b>`
+        let html = `<div style="font-weight:700;margin-bottom:6px">${date}</div>`
         for (const p of params) {
           if (p.seriesName.startsWith('_')) continue
-          if (p.value != null) html += `<br/>${p.marker} ${p.seriesName}: ${p.value}`
+          if (p.value != null) html += `<div style="margin:2px 0">${p.marker} ${p.seriesName}: ${p.value}</div>`
         }
         const upperP = params.find(p => p.seriesName === '预测波动范围')
         const lowerP = params.find(p => p.seriesName === '_lower')
         if (upperP?.value != null && lowerP?.value != null) {
-          html += `<br/><span style="color:#aaa">预测在 ${lowerP.value} ~ ${upperP.value} 之间波动</span>`
+          html += `<div style="margin-top:6px;color:#7a878b">预测在 ${lowerP.value} ~ ${upperP.value} 之间波动</div>`
         }
         return html
       },
     },
     legend: {
       data: legendData,
-      top: 28,
-      right: 10,
-      textStyle: { fontSize: 11 },
-      itemWidth: 16,
+      top: 14,
+      right: 12,
+      textStyle: { fontSize: 11, color: '#4a5a61' },
+      itemWidth: 18,
       itemHeight: 10,
     },
-    grid: { left: 55, right: 20, top: 55, bottom: 60 },
+    grid: { left: 58, right: 24, top: 64, bottom: 62 },
     xAxis: {
       type: 'category',
       data: d.dates,
+      boundaryGap: false,
+      axisLine: { lineStyle: { color: 'rgba(26,37,41,0.18)' } },
+      axisTick: { show: false },
       axisLabel: {
         rotate: 40,
         fontSize: 10,
         interval: labelInterval,
+        color: '#7a878b',
         formatter: (val) => val.slice(5),
       },
-      boundaryGap: false,
+      splitLine: { show: false },
     },
-    yAxis: { type: 'value', name: metric },
+    yAxis: {
+      type: 'value',
+      name: metric,
+      nameTextStyle: { color: '#7a878b', padding: [0, 0, 8, 0] },
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: '#7a878b' },
+      splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } },
+    },
     dataZoom: [{ type: 'inside', start: d.dates.length > 60 ? 40 : 0, end: 100 }],
     series,
   }

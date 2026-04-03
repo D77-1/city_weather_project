@@ -1,76 +1,142 @@
 <template>
-  <div class="compare-page">
+  <div class="compare-page page-shell">
     <AppHeader />
-    <div class="compare-content">
-      <el-page-header @back="$router.push('/')" style="padding: 16px 24px 0">
-        <template #content><span class="page-title">城市空气质量对比</span></template>
-      </el-page-header>
 
-      <!-- 城市选择器 -->
-      <div class="selector-bar">
-        <el-select v-model="selectedIds" multiple filterable placeholder="请选择 2~4 个城市进行对比" style="width: 500px" :max="4">
-          <el-option v-for="c in cityStore.cities" :key="c.id" :label="c.name" :value="c.id" />
-        </el-select>
-        <el-button type="primary" :loading="loading" :disabled="selectedIds.length < 2" @click="loadCompare">开始对比</el-button>
+    <section class="page-section compare-intro">
+      <div class="section-heading">
+        <span class="section-kicker">COMPARISON</span>
+        <h2 class="section-title">城市空气质量对比</h2>
       </div>
 
-      <template v-if="compareData.length > 0">
-        <!-- AQI + 天气概览卡片 - 不对称 -->
+      <el-card class="compare-intro-card">
+        <div class="compare-toolbar">
+          <div>
+            <p class="toolbar-kicker">对比说明</p>
+            <h3 class="toolbar-title">选择 2~4 个城市，展示空气质量、天气与污染物差异</h3>
+          </div>
+          <div class="selector-bar">
+            <el-select v-model="selectedIds" multiple filterable placeholder="请选择 2~4 个城市进行对比" style="width: 420px" :max="4">
+              <el-option v-for="c in cityStore.cities" :key="c.id" :label="c.name" :value="c.id" />
+            </el-select>
+            <el-button type="primary" :loading="loading" :disabled="selectedIds.length < 2" @click="loadCompare">开始对比</el-button>
+          </div>
+        </div>
+      </el-card>
+    </section>
+
+    <template v-if="compareData.length > 0">
+      <section class="page-section compare-overview">
+        <div class="section-heading compact-heading">
+          <span class="section-kicker">OVERVIEW</span>
+          <h2 class="section-title">对比总览</h2>
+        </div>
         <div class="overview-cards">
-          <el-card v-for="(c, i) in compareData" :key="c.cityId" class="city-card" shadow="hover"
-            :style="{ flex: i === 0 ? '1.3' : i === compareData.length - 1 ? '0.8' : '1' }">
+          <el-card v-for="(c, i) in compareData" :key="c.cityId" class="city-card" :style="{ flex: i === 0 ? '1.28' : i === compareData.length - 1 ? '0.92' : '1' }">
             <div class="cc-header">
-              <span class="cc-name">{{ c.cityName }}</span>
-              <el-tag size="small">{{ c.province }}</el-tag>
+              <div>
+                <span class="cc-name">{{ c.cityName }}</span>
+                <p class="cc-province">{{ c.province }}</p>
+              </div>
+              <el-tag size="small" effect="plain">样本城市</el-tag>
             </div>
             <div class="cc-aqi" :style="{ color: aqiColor(c.aqi) }">{{ c.aqi }}</div>
-            <div class="cc-label">AQI</div>
+            <div class="cc-label">空气质量指数 AQI</div>
             <div class="cc-weather" v-if="c.weather">
               <span><Icon :icon="weatherIcon(c.weather.weatherText)" width="16" /> {{ c.weather.weatherText }}</span>
               <span>{{ c.weather.temperature }}℃</span>
-              <span><Icon icon="mdi:water-outline" width="14" />{{ c.weather.humidity }}%</span>
+              <span><Icon icon="mdi:water-outline" width="14" /> {{ c.weather.humidity }}%</span>
             </div>
           </el-card>
         </div>
+      </section>
 
-        <!-- 对比折线图 -->
-        <el-card style="margin: 0 24px 16px">
-          <template #header><span>30 天 AQI 走势对比</span></template>
+      <section class="page-section compare-trend">
+        <div class="section-heading compact-heading">
+          <span class="section-kicker">TREND</span>
+          <h2 class="section-title">30 天趋势对照</h2>
+        </div>
+        <el-card class="report-card">
+          <template #header>
+            <div class="card-header card-header--stacked">
+              <div>
+                <span>30 天 AQI 走势对比</span>
+                <p>比较多城市空气质量变化节奏与波动幅度。</p>
+              </div>
+            </div>
+          </template>
           <EChartWrapper :option="trendOption" height="350px" />
         </el-card>
+      </section>
 
-        <!-- 污染物对比 - 不对称 -->
-        <div class="charts-row">
-          <el-card>
-            <template #header><span>污染物浓度雷达</span></template>
-            <EChartWrapper :option="radarOption" height="350px" />
-          </el-card>
-          <el-card>
-            <template #header><span>污染物浓度柱状</span></template>
-            <EChartWrapper :option="barOption" height="350px" />
-          </el-card>
+      <section class="page-section compare-analysis-grid">
+        <div>
+          <div class="section-heading compact-heading">
+            <span class="section-kicker">POLLUTANTS</span>
+            <h2 class="section-title">污染物结构对比</h2>
+          </div>
+          <div class="charts-row">
+            <el-card class="report-card">
+              <template #header>
+                <div class="card-header card-header--stacked">
+                  <div>
+                    <span>污染物浓度雷达</span>
+                    <p>适合在答辩中快速展示多指标结构差异。</p>
+                  </div>
+                </div>
+              </template>
+              <EChartWrapper :option="radarOption" height="350px" />
+            </el-card>
+            <el-card class="report-card">
+              <template #header>
+                <div class="card-header card-header--stacked">
+                  <div>
+                    <span>污染物浓度柱状</span>
+                    <p>直观比较主要污染物绝对值高低。</p>
+                  </div>
+                </div>
+              </template>
+              <EChartWrapper :option="barOption" height="350px" />
+            </el-card>
+          </div>
         </div>
 
-        <!-- 详细数据表格 -->
-        <el-card style="margin: 0 24px 24px">
-          <template #header><span>数据对照表</span></template>
-          <el-table :data="tableData" stripe border size="small">
-            <el-table-column prop="metric" label="指标" width="100" fixed />
-            <el-table-column v-for="c in compareData" :key="c.cityId" :label="c.cityName" align="center">
-              <template #default="{ row }">
-                <span :style="{ color: row[`color_${c.cityId}`] || '', fontWeight: 600 }">{{ row[`val_${c.cityId}`] }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </template>
-      <el-empty v-else-if="!loading" description="请先选择城市进行对比" :image-size="120" style="padding: 80px 0" />
-    </div>
+        <div>
+          <div class="section-heading compact-heading">
+            <span class="section-kicker">DETAILS</span>
+            <h2 class="section-title">数据对照表</h2>
+          </div>
+          <el-card class="report-card table-card">
+            <template #header>
+              <div class="card-header card-header--stacked">
+                <div>
+                  <span>指标对照</span>
+                  <p>绿色表示较优值，红色表示较差值。</p>
+                </div>
+              </div>
+            </template>
+            <el-table :data="tableData" stripe border size="small">
+              <el-table-column prop="metric" label="指标" width="100" fixed />
+              <el-table-column v-for="c in compareData" :key="c.cityId" :label="c.cityName" align="center">
+                <template #default="{ row }">
+                  <span :style="{ color: row[`color_${c.cityId}`] || '', fontWeight: 600 }">{{ row[`val_${c.cityId}`] }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </div>
+      </section>
+    </template>
+
+    <section v-else-if="!loading" class="page-section">
+      <el-card class="empty-card">
+        <el-empty description="请先选择城市进行对比" :image-size="120" />
+      </el-card>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCityStore } from '@/stores/city'
 import { compareApi } from '@/api/modules'
 import { Icon } from '@iconify/vue'
@@ -82,7 +148,7 @@ const selectedIds = ref([])
 const compareData = ref([])
 const loading = ref(false)
 
-const COLORS = ['#0d9488', '#e07a5f', '#d4a373', '#c1121f']
+const COLORS = ['#1e5c5a', '#a8743f', '#8d3d32', '#5f6f52']
 
 async function loadCompare() {
   if (selectedIds.value.length < 2) return
@@ -100,18 +166,30 @@ const trendOption = computed(() => {
   const allDates = compareData.value[0]?.history?.map(h => h.date) || []
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: compareData.value.map(c => c.cityName), top: 5 },
-    grid: { left: 50, right: 20, top: 40, bottom: 50 },
-    xAxis: { type: 'category', data: allDates, axisLabel: { rotate: 40, fontSize: 10, formatter: v => v.slice(5) } },
-    yAxis: { type: 'value', name: 'AQI' },
+    legend: { data: compareData.value.map(c => c.cityName), top: 8, textStyle: { color: '#4a5a61' } },
+    grid: { left: 50, right: 20, top: 56, bottom: 50 },
+    xAxis: {
+      type: 'category',
+      data: allDates,
+      boundaryGap: false,
+      axisLine: { lineStyle: { color: 'rgba(26,37,41,0.18)' } },
+      axisLabel: { rotate: 40, fontSize: 10, formatter: v => v.slice(5), color: '#7a878b' },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'AQI',
+      nameTextStyle: { color: '#7a878b' },
+      splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } },
+    },
     series: compareData.value.map((c, i) => ({
       name: c.cityName,
       type: 'line',
       data: c.history.map(h => h.aqi),
       smooth: true,
       symbol: 'none',
-      lineStyle: { width: 2, color: COLORS[i] },
+      lineStyle: { width: 2.5, color: COLORS[i] },
       itemStyle: { color: COLORS[i] },
+      areaStyle: i === 0 ? { color: 'rgba(30,92,90,0.08)' } : undefined,
     })),
   }
 })
@@ -123,15 +201,20 @@ const radarOption = computed(() => {
     { name: 'CO', max: 8 }, { name: 'O₃', max: 250 },
   ]
   return {
-    legend: { data: compareData.value.map(c => c.cityName), bottom: 5 },
-    radar: { indicator: indicators, shape: 'polygon' },
+    legend: { data: compareData.value.map(c => c.cityName), bottom: 4, textStyle: { color: '#4a5a61' } },
+    radar: {
+      indicator: indicators,
+      shape: 'polygon',
+      splitArea: { areaStyle: { color: ['rgba(30,92,90,0.03)', 'rgba(168,116,63,0.03)'] } },
+      axisName: { color: '#4a5a61' },
+    },
     series: [{
       type: 'radar',
       data: compareData.value.map((c, i) => ({
         name: c.cityName,
         value: [c.pm25, c.pm10, c.so2, c.no2, c.co, c.o3],
-        areaStyle: { color: COLORS[i], opacity: 0.15 },
-        lineStyle: { color: COLORS[i] },
+        areaStyle: { color: COLORS[i], opacity: 0.12 },
+        lineStyle: { color: COLORS[i], width: 2 },
         itemStyle: { color: COLORS[i] },
       })),
     }],
@@ -143,15 +226,16 @@ const barOption = computed(() => {
   const keys = ['pm25', 'pm10', 'so2', 'no2', 'o3']
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { data: compareData.value.map(c => c.cityName), bottom: 5 },
-    grid: { left: 50, right: 20, top: 20, bottom: 50 },
-    xAxis: { type: 'category', data: metrics },
-    yAxis: { type: 'value', name: 'μg/m³' },
+    legend: { data: compareData.value.map(c => c.cityName), bottom: 4, textStyle: { color: '#4a5a61' } },
+    grid: { left: 50, right: 20, top: 24, bottom: 54 },
+    xAxis: { type: 'category', data: metrics, axisLabel: { color: '#7a878b' } },
+    yAxis: { type: 'value', name: 'μg/m³', nameTextStyle: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
     series: compareData.value.map((c, i) => ({
       name: c.cityName,
       type: 'bar',
+      barMaxWidth: 18,
       data: keys.map(k => c[k]),
-      itemStyle: { color: COLORS[i] },
+      itemStyle: { color: COLORS[i], borderRadius: [8, 8, 0, 0] },
     })),
   }
 })
@@ -174,7 +258,7 @@ const tableData = computed(() => {
     compareData.value.forEach(c => {
       const v = c[m.key] || 0
       row[`val_${c.cityId}`] = v
-      row[`color_${c.cityId}`] = v === best ? '#2d6a4f' : v === worst ? '#c1121f' : ''
+      row[`color_${c.cityId}`] = v === best ? '#2d6a4f' : v === worst ? '#8d3d32' : ''
     })
     return row
   })
@@ -183,9 +267,9 @@ const tableData = computed(() => {
 function aqiColor(aqi) {
   if (!aqi) return '#8a8a8a'
   if (aqi <= 50) return '#2d6a4f'
-  if (aqi <= 100) return '#d4a373'
-  if (aqi <= 150) return '#e07a5f'
-  if (aqi <= 200) return '#c1121f'
+  if (aqi <= 100) return '#a8743f'
+  if (aqi <= 150) return '#c86b4b'
+  if (aqi <= 200) return '#b42318'
   return '#780116'
 }
 
@@ -205,20 +289,141 @@ function weatherIcon(condition) {
   return map[condition] || 'meteocons:partly-cloudy-day-fill'
 }
 
-import { onMounted } from 'vue'
 onMounted(() => { if (cityStore.cities.length === 0) cityStore.fetchCities() })
 </script>
 
 <style scoped>
-.compare-page { min-height: 100vh; background: var(--bg-page, #eae6e1); }
-.page-title { font-size: 16px; font-weight: 700; }
-.selector-bar { display: flex; gap: 12px; padding: 16px 24px; align-items: center; }
-.overview-cards { display: flex; gap: 16px; padding: 0 24px 16px; }
-.city-card { text-align: left; }
-.cc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.cc-name { font-size: 16px; font-weight: 700; }
-.cc-aqi { font-size: 42px; font-weight: 800; line-height: 1.2; letter-spacing: -2px; }
-.cc-label { font-size: 12px; color: var(--text-muted, #8a8a8a); }
-.cc-weather { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 13px; color: var(--text-secondary, #5a5a5a); }
-.charts-row { display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 16px; padding: 0 24px 16px; }
+.compare-page {
+  padding-bottom: 28px;
+}
+
+.compare-intro-card,
+.report-card,
+.city-card,
+.empty-card {
+  background: rgba(255, 252, 247, 0.78) !important;
+}
+
+.compare-toolbar,
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.toolbar-kicker {
+  font-family: var(--aq-mono);
+  font-size: 20px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--aq-accent);
+}
+
+.toolbar-title {
+  margin-top: 10px;
+  font-family: var(--aq-display);
+  font-size: 32px;
+  line-height: 1.14;
+  color: var(--aq-ink);
+}
+
+.selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.overview-cards {
+  display: flex;
+  gap: 16px;
+}
+
+.city-card {
+  padding: 24px;
+}
+
+.cc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cc-name {
+  display: block;
+  font-family: var(--aq-display);
+  font-size: 28px;
+  color: var(--aq-ink);
+}
+
+.cc-province,
+.cc-label,
+.cc-weather,
+.card-header p {
+  color: var(--aq-ink-soft);
+}
+
+.cc-province {
+  margin-top: 4px;
+}
+
+.cc-aqi {
+  margin-top: 18px;
+  font-size: 64px;
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.cc-label {
+  margin-top: 6px;
+  font-family: var(--aq-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cc-weather {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.card-header--stacked p,
+.card-header p {
+  margin-top: 4px;
+}
+
+.compare-analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.95fr);
+  gap: 18px;
+}
+
+.charts-row {
+  display: grid;
+  gap: 16px;
+}
+
+.table-card :deep(.el-table) {
+  --el-table-header-bg-color: rgba(168, 116, 63, 0.06);
+}
+
+.empty-card {
+  padding: 24px;
+}
+
+@media (max-width: 1200px) {
+  .compare-toolbar,
+  .compare-analysis-grid,
+  .overview-cards {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+}
 </style>

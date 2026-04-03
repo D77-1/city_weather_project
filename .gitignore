@@ -28,3 +28,17 @@ frontend/dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Test files
+*.test.mjs
+*.test.js
+*.spec.js
+*.spec.mjs
+frontend/tests/
+frontend/vitest.config.js
+docs/superpowers/
+
+# AI agent configs
+AGENTS.md
+GEMINI.md
+.claude/

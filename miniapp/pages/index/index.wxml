@@ -1,4 +1,9 @@
-<!-- AQI 大卡片 — 渐变背景 -->
+<view class="page-head">
+  <view class="page-kicker">AIR QUALITY RESEARCH</view>
+  <view class="page-title">城市空气态势总览</view>
+  <view class="page-subtitle">用于答辩展示当前城市状态、趋势与排名结果</view>
+</view>
+
 <view class="aqi-hero" style="background: {{levelInfo.bg}}">
   <picker value="{{cityIndex}}" range="{{cityNames}}" bindchange="onCityChange">
     <view class="city-picker">{{currentCity.cityName || '选择城市'}} ▼</view>
@@ -9,7 +14,6 @@
   <view class="hero-date">{{currentCity.recordDate}}</view>
 </view>
 
-<!-- 天气简报 — CSS 图标替代 emoji -->
 <view class="weather-brief" wx:if="{{currentCity.temperature != null}}">
   <view class="wb-main">
     <image src="{{weatherIcon.icon}}" class="wb-svg" mode="aspectFit" />
@@ -22,7 +26,6 @@
   <view class="wb-item" wx:if="{{currentCity.rainfall > 0}}"><text class="wb-val num">{{currentCity.rainfall}}mm</text><text class="wb-label">降水</text></view>
 </view>
 
-<!-- 六项指标 — 不对称网格 -->
 <view class="pollutant-grid" wx:if="{{currentCity.aqi}}">
   <view class="p-item" wx:for="{{pollutants}}" wx:key="name">
     <view class="p-val num">{{item.value}}</view>
@@ -31,13 +34,11 @@
   </view>
 </view>
 
-<!-- 7日趋势 -->
 <view class="card">
   <view class="card-title">近7日 AQI 趋势</view>
   <canvas canvas-id="trendChart" class="trend-canvas" bindtap="goDetail"></canvas>
 </view>
 
-<!-- 排名 -->
 <view class="card">
   <view class="card-title">全国城市排名</view>
   <view class="rank-item" wx:for="{{ranking}}" wx:key="cityId" bindtap="onRankTap" data-item="{{item}}">

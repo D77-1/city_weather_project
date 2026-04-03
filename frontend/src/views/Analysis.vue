@@ -7,6 +7,7 @@
         <div class="toolbar-left">
           <Icon icon="mdi:chart-areaspline" width="22" style="color: var(--primary)" />
           <span class="toolbar-title">数据分析</span>
+          <span class="brand-date">({{ currentDate }})</span>
           <el-tag effect="plain" size="small">{{ selectedCityName }}</el-tag>
         </div>
         <div class="toolbar-right">
@@ -252,6 +253,10 @@ const algorithmOptions = [
   { label: 'ARIMA', value: 'arima' },
   { label: 'LSTM', value: 'lstm' },
 ]
+const currentDate = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
+})
 
 const selectedCityName = computed(() => cityStore.currentCity?.name || '全国')
 const latestCity = computed(() => aqStore.latestData.find((d) => d.cityId === cityStore.currentCityId) || null)
