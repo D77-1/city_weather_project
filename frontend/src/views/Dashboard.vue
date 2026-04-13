@@ -15,18 +15,18 @@
               <p class="hero-label">当前展示城市</p>
               <div class="hero-city-line">
                 <strong>{{ selectedCityName }}</strong>
-                <el-tag :type="aqiTagType(currentCityLatest.aqi || 0)" size="small">{{ currentCityLatest.qualityLevel ?? '--' }}</el-tag>
+                <el-tag :type="aqiTagType(displayData.aqi || 0)" size="small">{{ displayData.qualityLevel ?? '--' }}</el-tag>
               </div>
             </div>
             <span class="hero-panel-tag">DEFENSE PANEL</span>
           </div>
 
           <div class="hero-aqi-block">
-            <div class="hero-aqi-value" :style="{ color: aqiColor(currentCityLatest.aqi) }">{{ currentCityLatest.aqi ?? '--' }}</div>
+            <div class="hero-aqi-value" :style="{ color: aqiColor(displayData.aqi) }">{{ displayData.aqi ?? '--' }}</div>
             <div class="hero-aqi-copy">
               <p>空气质量指数 AQI</p>
-              <span>数据库日期：{{ currentCityLatest.recordDate || '--' }}</span>
-              <span>数据来源：{{ currentCityLatest.dataSource || 'local_db_daily_avg' }}</span>
+              <span>数据来源：{{ displayData.source }}</span>
+              <span>更新时间：{{ displayData.updateTime || '--' }}</span>
             </div>
           </div>
 
@@ -92,7 +92,7 @@
           </div>
         </el-card>
 
-        <el-card class="side-panel">
+        <!-- <el-card class="side-panel">
           <template #header>
             <div class="card-header card-header--stacked">
               <div>
@@ -109,7 +109,7 @@
               <b>{{ item.score }}</b>
             </div>
           </div>
-        </el-card>
+        </el-card> -->
       </div>
     </section>
 
@@ -161,8 +161,26 @@
             </div>
           </div>
         </el-card>
+        <el-card class="side-panel">
+          <template #header>
+            <div class="card-header card-header--stacked">
+              <div>
+                <span>未来 5 天风险</span>
+                <p>结合预测与风险评估结果生成答辩展示摘要。</p>
+              </div>
+            </div>
+          </template>
+          <div class="list-stack">
+            <div v-if="!futureRiskList.length" class="empty-tip">暂无风险数据</div>
+            <div v-for="item in futureRiskList" :key="item.date" class="risk-row">
+              <el-tag :type="riskTagType(item.level)" size="small">{{ riskLevelText(item.level) }}</el-tag>
+              <span>{{ item.date }}</span>
+              <b>{{ item.score }}</b>
+            </div>
+          </div>
+        </el-card>
 
-        <el-card class="analysis-card">
+        <!-- <el-card class="analysis-card">
           <template #header>
             <div class="card-header">
               <div>
@@ -180,7 +198,7 @@
               <el-tag :type="item.available ? 'success' : 'warning'" size="small">{{ item.available ? '可用' : '回退' }}</el-tag>
             </div>
           </div>
-        </el-card>
+        </el-card> -->
       </div>
     </section>
 
@@ -191,9 +209,9 @@
       </div>
 
       <HealthAdvice
-        v-if="currentCityLatest.aqi"
-        :aqi="currentCityLatest.aqi"
-        :quality-level="currentCityLatest.qualityLevel"
+        v-if="displayData.aqi"
+        :aqi="displayData.aqi"
+        :quality-level="displayData.qualityLevel"
         :risk-level="aqStore.riskResult?.level"
         :future-summary="aqStore.riskResult?.summary"
         :main-pollutants="(aqStore.riskResult?.drivers || []).slice(0, 3).map(d => d.factor)"
@@ -264,6 +282,26 @@ const algorithmOptions = [
 
 const selectedCityName = computed(() => cityStore.currentCity?.name || '全国')
 const currentCityLatest = computed(() => aqStore.latestData.find((d) => d.cityId === cityStore.currentCityId) || {})
+// 实时数据优先，fallback 到数据库值
+const displayData = computed(() => {
+  const rt = aqStore.realtimeLatest
+  const db = currentCityLatest.value
+  if (rt?.aqi != null) {
+    return {
+      aqi: rt.aqi,
+      qualityLevel: rt.qualityLevel || db.qualityLevel,
+      pm25: rt.pm25 ?? db.pm25,
+      pm10: rt.pm10 ?? db.pm10,
+      so2: rt.so2 ?? db.so2,
+      no2: rt.no2 ?? db.no2,
+      co: rt.co ?? db.co,
+      o3: rt.o3 ?? db.o3,
+      source: 'Open-Meteo 实时',
+      updateTime: rt.updateTime || '',
+    }
+  }
+  return { ...db, source: db.dataSource || 'local_db_daily_avg', updateTime: db.recordDate || '' }
+})
 const predictionRangeText = computed(() => {
   const meta = aqStore.predictionMeta
   if (!meta?.historyStart || !meta?.historyEnd) return '--'
@@ -271,8 +309,8 @@ const predictionRangeText = computed(() => {
 })
 const overviewCards = computed(() => [
   { label: '综合风险', value: aqStore.riskResult?.score ?? '--' },
-  { label: 'PM2.5', value: currentCityLatest.value.pm25 ?? '--' },
-  { label: 'PM10', value: currentCityLatest.value.pm10 ?? '--' },
+  { label: 'PM2.5', value: displayData.value.pm25 ?? '--' },
+  { label: 'PM10', value: displayData.value.pm10 ?? '--' },
   { label: '实时天气', value: aqStore.realtimeLatest?.weather?.weatherText || '--' },
 ])
 const topDrivers = computed(() => (aqStore.riskResult?.drivers || []).slice(0, 4))

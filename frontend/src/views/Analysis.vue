@@ -96,20 +96,23 @@
           <template #header>
             <div class="card-header">
               <span>模型准确性对比</span>
-              <el-tag size="small" effect="plain" type="success">MAE / RMSE / MAPE / R²</el-tag>
+              <div class="header-actions">
+                <el-tag size="small" effect="plain" type="success">MAE / RMSE / MAPE / R²</el-tag>
+                <el-button size="small" plain :disabled="!comparisonRows.length" @click="exportComparisonCSV">Export CSV</el-button>
+              </div>
             </div>
           </template>
-          <el-table :data="aqStore.predictionResult?.comparison || []" stripe size="small">
+          <el-table :data="comparisonRows" stripe size="small">
             <el-table-column prop="algorithm" label="算法" min-width="150">
-              <template #default="{ row }">{{ algorithmText(row.algorithm) }}</template>
+              <template #default="{ row }">{{ row.algorithmLabel }}</template>
             </el-table-column>
             <el-table-column prop="mae" label="MAE" min-width="90" />
             <el-table-column prop="rmse" label="RMSE" min-width="90" />
             <el-table-column prop="mape" label="MAPE" min-width="90" />
             <el-table-column prop="r2" label="R²" min-width="90" />
-            <el-table-column prop="usedFallback" label="状态" min-width="110">
+            <el-table-column prop="status" label="状态" min-width="110">
               <template #default="{ row }">
-                <el-tag :type="row.usedFallback ? 'warning' : 'success'" size="small">{{ row.usedFallback ? '回退' : '正常' }}</el-tag>
+                <el-tag :type="row.usedFallback ? 'warning' : 'success'" size="small">{{ row.statusLabel }}</el-tag>
               </template>
             </el-table-column>
           </el-table>
@@ -277,6 +280,12 @@ const predictionNotice = computed(() => {
   return `当前使用 ${algorithmText(meta.selectedAlgorithm)}；历史区间 ${predictionRangeText.value}；最佳算法建议为 ${bestAlgorithmLabel.value}。`
 })
 const availabilityList = computed(() => Object.entries(aqStore.predictionMeta?.availability || {}).map(([key, value]) => ({ key, label: algorithmText(key), available: value.available, reason: value.reason })))
+const comparisonRows = computed(() => (aqStore.predictionResult?.comparison || []).map((row) => ({
+  ...row,
+  algorithmLabel: algorithmText(row.algorithm),
+  status: row.usedFallback ? 'fallback' : 'normal',
+  statusLabel: row.usedFallback ? '回退' : '正常',
+})))
 
 const realtimeCompareRows = computed(() => {
   const dbRow = latestCity.value
@@ -401,6 +410,42 @@ function diffText(dbValue, realValue) {
   if (dbValue == null || realValue == null) return '--'
   return (Number(dbValue) - Number(realValue)).toFixed(1)
 }
+function escapeCSVCell(value) {
+  const text = value == null ? '' : String(value)
+  if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`
+  return text
+}
+function formatTimestamp(date = new Date()) {
+  const pad = (v) => String(v).padStart(2, '0')
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+}
+function exportComparisonCSV() {
+  if (!comparisonRows.value.length) return
+
+  const exportTime = new Date().toISOString()
+  const headers = ['cityName', 'metric', 'algorithm', 'mae', 'rmse', 'mape', 'r2', 'available', 'usedFallback', 'status', 'bestAlgorithm', 'exportTime']
+  const rows = comparisonRows.value.map((row) => ([
+    selectedCityName.value,
+    selectedMetric.value,
+    row.algorithm,
+    row.mae ?? '',
+    row.rmse ?? '',
+    row.mape ?? '',
+    row.r2 ?? '',
+    row.available ?? '',
+    row.usedFallback ?? '',
+    row.status,
+    aqStore.predictionMeta?.bestAlgorithm || '',
+    exportTime,
+  ]))
+  const csv = '\uFEFF' + [headers, ...rows].map((row) => row.map(escapeCSVCell).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `model_evaluation_${selectedCityName.value}_${selectedMetric.value}_${formatTimestamp()}.csv`
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
 
 watch(() => cityStore.currentCityId, () => loadData())
 onMounted(async () => {
@@ -421,7 +466,7 @@ onMounted(async () => {
 .row-asymmetric { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-bottom: 12px; }
 .flex-grow, .flex-side { min-width: 0; }
 .card-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.header-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.header-tags, .header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .forecast-chip-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 8px; margin-top: 12px; }
 .forecast-chip { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(230, 162, 60, 0.08); font-size: 12px; }
 .forecast-chip b { font-family: var(--font-mono); color: #c2410c; }

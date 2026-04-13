@@ -50,7 +50,23 @@
             </div>
           </div>
         </template>
-        <el-table :data="aqStore.anomalyList" stripe border v-loading="loading">
+        <el-table :data="aqStore.anomalyList" stripe border v-loading="loading" row-key="id">
+          <el-table-column type="expand">
+            <template #default="{ row }">
+              <div class="expand-content">
+                <div v-if="row.aiAnalysis" class="ai-analysis-box">
+                  <span class="ai-label">AI 归因分析</span>
+                  <p>{{ row.aiAnalysis }}</p>
+                </div>
+                <div v-else-if="row.status === 'confirmed'" class="ai-analysis-box ai-loading">
+                  <span class="ai-label">AI 分析生成中...</span>
+                </div>
+                <div v-else class="ai-analysis-box ai-empty">
+                  <span class="ai-label">确认异常后将自动生成 AI 归因分析</span>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column prop="id" label="ID" width="60" />
           <el-table-column label="城市" width="90">
             <template #default="{ row }">{{ getCityName(row.cityId) }}</template>
@@ -85,9 +101,10 @@
           <el-table-column label="操作" width="170" fixed="right">
             <template #default="{ row }">
               <div class="action-row" v-if="row.status === 'pending'">
-                <el-button type="success" size="small" @click="updateStatus(row.id, 'confirmed')">确认</el-button>
+                <el-button type="success" size="small" :loading="confirmingId === row.id" @click="confirmAnomaly(row.id)">确认</el-button>
                 <el-button type="info" size="small" @click="updateStatus(row.id, 'dismissed')">忽略</el-button>
               </div>
+              <el-tag v-else-if="row.aiAnalysis" type="success" size="small" effect="plain">已分析</el-tag>
             </template>
           </el-table-column>
         </el-table>
@@ -106,6 +123,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 const cityStore = useCityStore()
 const aqStore = useAirQualityStore()
 const loading = ref(false)
+const confirmingId = ref(null)
 
 const filters = reactive({ city_id: null, metric: null, severity: null })
 
@@ -140,6 +158,16 @@ async function runDetectAll() {
 async function updateStatus(eventId, status) {
   await anomalyApi.updateStatus(eventId, { status })
   await loadList()
+}
+
+async function confirmAnomaly(eventId) {
+  confirmingId.value = eventId
+  try {
+    await anomalyApi.updateStatus(eventId, { status: 'confirmed' })
+    await loadList()
+  } finally {
+    confirmingId.value = null
+  }
 }
 
 function getCityName(cityId) {
@@ -214,5 +242,40 @@ onMounted(async () => {
   .filter-topbar {
     flex-direction: column;
   }
+}
+
+.expand-content {
+  padding: 12px 20px;
+}
+
+.ai-analysis-box {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(30, 92, 90, 0.06), rgba(168, 116, 63, 0.04));
+  border: 1px solid rgba(30, 92, 90, 0.12);
+}
+
+.ai-analysis-box p {
+  margin-top: 8px;
+  line-height: 1.7;
+  color: var(--aq-ink);
+  white-space: pre-wrap;
+}
+
+.ai-label {
+  font-family: var(--aq-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aq-accent);
+  font-weight: 600;
+}
+
+.ai-empty {
+  opacity: 0.6;
+}
+
+.ai-loading {
+  opacity: 0.7;
 }
 </style>

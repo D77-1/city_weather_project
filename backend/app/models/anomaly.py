@@ -21,6 +21,7 @@ class AnomalyEvent(db.Model):
     severity = db.Column(db.Enum('mild', 'moderate', 'severe'), default='mild')
     status = db.Column(db.Enum('pending', 'confirmed', 'dismissed'), default='pending')
     description = db.Column(db.Text)
+    ai_analysis = db.Column(db.Text, comment='AI 归因分析结果')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     city = db.relationship('City', backref=db.backref('anomalies', lazy='dynamic'))
@@ -43,4 +44,5 @@ class AnomalyEvent(db.Model):
             'severity': self.severity,
             'status': self.status,
             'description': self.description,
+            'aiAnalysis': self.ai_analysis,
         }

@@ -42,6 +42,8 @@ def _wmo_to_text(code):
 
 
 def _wmo_to_emoji(code):
+    if code is None:
+        return '🌤️'
     if code == 0:
         return '☀️'
     if code <= 2:
@@ -191,10 +193,13 @@ def _build_history_from_forecast(forecast):
 def get_weather_history(lat, lng, days=30):
     """
     获取过去 N 天的历史天气
+    archive API 有 ~5 天延迟，用 forecast API 补上最近几天
     """
-    end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    result = []
 
+    # 1. 从 archive API 拉历史（到 5 天前）
+    end_date = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     try:
         payload = _fetch_json(OPEN_METEO_ARCHIVE, tuple(sorted({
             'latitude': lat, 'longitude': lng,
@@ -203,21 +208,27 @@ def get_weather_history(lat, lng, days=30):
             'daily': ','.join([
                 'temperature_2m_max', 'temperature_2m_min', 'temperature_2m_mean',
                 'precipitation_sum', 'wind_speed_10m_max', 'weather_code',
+                'relative_humidity_2m_mean',
             ]),
             'timezone': 'Asia/Shanghai',
         }.items())), REQUEST_TIMEOUT_HISTORY)
         daily = payload.get('daily', {})
         result = _build_history_from_daily(daily)
-        if result:
-            return result
     except Exception as e:
         print(f'[Weather] 历史天气请求失败: {e}')
 
-    forecast_days = min(max(days, 1), 16)
-    fallback = _build_history_from_forecast(get_weather_forecast(lat, lng, forecast_days))
-    if fallback:
-        print('[Weather] 历史天气改用 forecast 回退数据')
-    return fallback
+    # 2. 用 forecast API 补上最近几天
+    try:
+        recent = _build_history_from_forecast(get_weather_forecast(lat, lng, 7))
+        existing_dates = {r['date'] for r in result}
+        for r in recent:
+            if r['date'] not in existing_dates:
+                result.append(r)
+    except Exception as e:
+        print(f'[Weather] 补充近期天气失败: {e}')
+
+    result.sort(key=lambda x: x.get('date', ''))
+    return result
 
 
 

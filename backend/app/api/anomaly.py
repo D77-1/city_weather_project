@@ -98,4 +98,48 @@ def update_anomaly_status(event_id):
 
     event.status = new_status
     db.session.commit()
+
+    # 确认异常后，自动调用 AI 生成归因分析
+    if new_status == 'confirmed' and not event.ai_analysis:
+        try:
+            from app.services.ai_service import chat_with_qwen
+            from app.models import City
+            city = City.query.get(event.city_id)
+            city_name = city.name if city else '未知城市'
+
+            metric_names = {
+                'aqi': 'AQI（空气质量指数）',
+                'pm25': 'PM2.5（细颗粒物）',
+                'pm10': 'PM10（可吸入颗粒物）',
+                'o3': 'O3（臭氧）',
+                'no2': 'NO2（二氧化氮）',
+                'so2': 'SO2（二氧化硫）',
+                'co': 'CO（一氧化碳）',
+            }
+            metric_label = metric_names.get(event.metric_name, event.metric_name)
+            direction = '异常偏高' if event.anomaly_type == 'high' else '异常偏低'
+            severity_text = {'severe': '严重', 'moderate': '中度', 'mild': '轻度'}.get(event.severity, event.severity)
+
+            prompt = (
+                f"以下是一条已确认的空气质量异常事件，请分析可能的原因并给出应对建议：\n\n"
+                f"- 城市：{city_name}\n"
+                f"- 指标：{metric_label}\n"
+                f"- 日期：{event.record_time.strftime('%Y-%m-%d')}\n"
+                f"- 实际值：{float(event.actual_value)}\n"
+                f"- 正常范围：{float(event.lower_bound)} ~ {float(event.upper_bound)}\n"
+                f"- 异常方向：{direction}\n"
+                f"- 严重程度：{severity_text}\n\n"
+                f"请从以下角度分析：\n"
+                f"1. 可能的污染来源或气象原因（2-3条）\n"
+                f"2. 对居民健康的影响\n"
+                f"3. 建议采取的应对措施\n"
+                f"请控制在200字以内，简洁专业。"
+            )
+
+            result = chat_with_qwen(prompt)
+            event.ai_analysis = result.get('content', '')
+            db.session.commit()
+        except Exception as e:
+            print(f'[AI Analysis] 异常归因分析失败: {e}')
+
     return success(event.to_dict())

@@ -99,12 +99,18 @@
       <section class="page-section">
         <div class="section-heading compact-heading">
           <span class="section-kicker">CORRELATION</span>
-          <h2 class="section-title">天气相关性</h2>
+          <h2 class="section-title">深度分析</h2>
         </div>
-        <el-card class="report-card">
-          <template #header><div class="card-header"><span>温度与 AQI 相关性分析</span><p>通过散点关系辅助解释天气因素与空气质量的关联。</p></div></template>
-          <EChartWrapper :option="scatterOption" height="320px" />
-        </el-card>
+        <div class="charts-row">
+          <el-card class="report-card">
+            <template #header><div class="card-header"><span>污染物相关性矩阵</span><p>展示六项污染物浓度之间的皮尔逊相关系数，揭示同源性。</p></div></template>
+            <EChartWrapper :option="heatmapOption" height="360px" />
+          </el-card>
+          <el-card class="report-card">
+            <template #header><div class="card-header"><span>季度 AQI 分布</span><p>通过箱线图展示不同季度的 AQI 分布特征与季节差异。</p></div></template>
+            <EChartWrapper :option="boxplotOption" height="360px" />
+          </el-card>
+        </div>
       </section>
 
       <section class="page-section" v-if="forecast.length > 0">
@@ -147,7 +153,7 @@
               <el-button size="small" @click="exportCSV">导出 CSV</el-button>
             </div>
           </template>
-          <el-table :data="history.slice(0, 50)" stripe size="small" max-height="400">
+          <el-table :data="history" stripe size="small" max-height="400">
             <el-table-column prop="date" label="日期" width="100" />
             <el-table-column prop="aqi" label="AQI" width="70" />
             <el-table-column prop="pm25" label="PM2.5" width="80" />
@@ -294,17 +300,103 @@ const pollutantMonthlyOption = computed(() => {
   }
 })
 
-const scatterOption = computed(() => {
-  const data = history.value.filter(r => r.temperature != null && r.aqi).map(r => [r.temperature, r.aqi])
+// 污染物相关性热力图
+const heatmapOption = computed(() => {
+  const metrics = ['PM2.5', 'PM10', 'SO₂', 'NO₂', 'CO', 'O₃']
+  const keys = ['pm25', 'pm10', 'so2', 'no2', 'co', 'o3']
+  const rows = history.value.filter(r => r.aqi)
+
+  if (rows.length < 5) return { graphic: { type: 'text', left: 'center', top: 'middle', style: { text: '数据不足', fill: '#999' } } }
+
+  // 提取各指标数组
+  const arrays = keys.map(k => rows.map(r => r[k] || 0))
+
+  // 计算皮尔逊相关系数
+  function pearson(a, b) {
+    const n = a.length
+    const meanA = a.reduce((s, v) => s + v, 0) / n
+    const meanB = b.reduce((s, v) => s + v, 0) / n
+    let num = 0, denA = 0, denB = 0
+    for (let i = 0; i < n; i++) {
+      const da = a[i] - meanA, db = b[i] - meanB
+      num += da * db; denA += da * da; denB += db * db
+    }
+    const den = Math.sqrt(denA * denB)
+    return den === 0 ? 0 : num / den
+  }
+
+  const data = []
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = 0; j < keys.length; j++) {
+      const r = parseFloat(pearson(arrays[i], arrays[j]).toFixed(2))
+      data.push([j, i, r])
+    }
+  }
+
   return {
-    tooltip: { formatter: p => `温度: ${p.value[0]}℃<br/>AQI: ${p.value[1]}` },
-    grid: { left: 60, right: 20, top: 20, bottom: 50 },
-    xAxis: { type: 'value', name: '温度 (℃)', nameTextStyle: { color: '#7a878b' }, axisLabel: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
-    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#7a878b' }, axisLabel: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
+    tooltip: { formatter: p => `${metrics[p.value[1]]} vs ${metrics[p.value[0]]}<br/>相关系数: ${p.value[2]}` },
+    grid: { left: 70, right: 40, top: 10, bottom: 50 },
+    xAxis: { type: 'category', data: metrics, axisLabel: { color: '#4a5a61' }, splitArea: { show: true } },
+    yAxis: { type: 'category', data: metrics, axisLabel: { color: '#4a5a61' }, splitArea: { show: true } },
+    visualMap: { min: -1, max: 1, calculable: true, orient: 'vertical', right: 0, top: 'center', inRange: { color: ['#2d6a4f', '#f5f1eb', '#b42318'] }, textStyle: { color: '#7a878b' } },
     series: [{
-      type: 'scatter', data,
-      symbolSize: 8,
-      itemStyle: { color: 'rgba(30,92,90,0.35)' },
+      type: 'heatmap', data,
+      label: { show: true, formatter: p => p.value[2].toFixed(2), fontSize: 11 },
+      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } },
+    }],
+  }
+})
+
+// 季度 AQI 箱线图
+const boxplotOption = computed(() => {
+  const quarters = { 'Q1 春': [], 'Q2 夏': [], 'Q3 秋': [], 'Q4 冬': [] }
+  history.value.forEach(r => {
+    if (!r.aqi || !r.date) return
+    const month = parseInt(r.date.slice(5, 7))
+    if (month >= 3 && month <= 5) quarters['Q1 春'].push(r.aqi)
+    else if (month >= 6 && month <= 8) quarters['Q2 夏'].push(r.aqi)
+    else if (month >= 9 && month <= 11) quarters['Q3 秋'].push(r.aqi)
+    else quarters['Q4 冬'].push(r.aqi)
+  })
+
+  const labels = Object.keys(quarters)
+  const hasData = labels.some(k => quarters[k].length >= 3)
+  if (!hasData) return { graphic: { type: 'text', left: 'center', top: 'middle', style: { text: '数据不足，建议选择更长周期', fill: '#999' } } }
+
+  // 计算箱线图五数概括
+  function calcBox(arr) {
+    if (arr.length < 3) return [0, 0, 0, 0, 0]
+    arr.sort((a, b) => a - b)
+    const q1 = arr[Math.floor(arr.length * 0.25)]
+    const median = arr[Math.floor(arr.length * 0.5)]
+    const q3 = arr[Math.floor(arr.length * 0.75)]
+    const iqr = q3 - q1
+    const min = Math.max(arr[0], q1 - 1.5 * iqr)
+    const max = Math.min(arr[arr.length - 1], q3 + 1.5 * iqr)
+    return [min, q1, median, q3, max]
+  }
+
+  const boxData = labels.map(k => calcBox(quarters[k]))
+  const sampleCounts = labels.map(k => quarters[k].length)
+  const colors = ['#2d6a4f', '#a8743f', '#c86b4b', '#1e5c5a']
+
+  return {
+    tooltip: {
+      trigger: 'item',
+      formatter: function(p) {
+        const idx = p.dataIndex
+        const d = boxData[idx]
+        const name = labels[idx]
+        if (!d) return ''
+        return `<b>${name}</b> (${sampleCounts[idx]}天)<br/>最大: ${d[4]}<br/>Q3: ${d[3]}<br/>中位数: ${d[2]}<br/>Q1: ${d[1]}<br/>最小: ${d[0]}`
+      },
+    },
+    grid: { left: 55, right: 20, top: 20, bottom: 40 },
+    xAxis: { type: 'category', data: labels, axisLabel: { color: '#4a5a61', fontWeight: 'bold' } },
+    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
+    series: [{
+      type: 'boxplot',
+      data: boxData.map((d, i) => ({ value: d, itemStyle: { color: 'rgba(30,92,90,0.12)', borderColor: colors[i], borderWidth: 2 } })),
     }],
   }
 })
@@ -325,15 +417,34 @@ function weatherIcon(condition) {
   return map[condition] || 'meteocons:partly-cloudy-day-fill'
 }
 
+function escapeCSVCell(value, forceText = false) {
+  const text = value == null ? '' : String(value)
+  const normalized = forceText ? `="${text.replace(/"/g, '""')}"` : text
+  if (/[",\n\r]/.test(normalized)) return `"${normalized.replace(/"/g, '""')}"`
+  return normalized
+}
+
 function exportCSV() {
   const headers = ['日期', 'AQI', 'PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3', '温度', '湿度']
-  const rows = history.value.map(r => [r.date, r.aqi, r.pm25, r.pm10, r.so2, r.no2, r.co, r.o3, r.temperature, r.humidity])
+  const rows = history.value.map(r => [
+    escapeCSVCell(r.date, true),
+    escapeCSVCell(r.aqi),
+    escapeCSVCell(r.pm25),
+    escapeCSVCell(r.pm10),
+    escapeCSVCell(r.so2),
+    escapeCSVCell(r.no2),
+    escapeCSVCell(r.co),
+    escapeCSVCell(r.o3),
+    escapeCSVCell(r.temperature),
+    escapeCSVCell(r.humidity),
+  ])
   const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = `${cityName.value}_air_quality_report.csv`
   a.click()
+  URL.revokeObjectURL(a.href)
 }
 
 async function loadReport() {
@@ -341,11 +452,25 @@ async function loadReport() {
   if (!id) return
   loading.value = true
   try {
-    const [hist, fc] = await Promise.all([
-      airQualityApi.getHistory({ city_id: id, days: Number(period.value) }),
+    const days = Number(period.value)
+    const [hist, fc, wh] = await Promise.all([
+      airQualityApi.getHistory({ city_id: id, days }),
       weatherApi.getForecast(id, 7),
+      weatherApi.getHistory(id, Math.min(days, 90)),
     ])
-    history.value = hist
+    // 将天气历史按日期合并到空气质量数据（补充温度湿度）
+    const weatherMap = {}
+    for (const w of (wh.history || wh || [])) {
+      if (w.date) weatherMap[w.date] = w
+    }
+    history.value = (hist || []).map(r => {
+      const w = weatherMap[r.date]
+      return {
+        ...r,
+        temperature: r.temperature ?? (w ? w.tempMean : null),
+        humidity: r.humidity ?? (w ? w.humidity : null),
+      }
+    })
     forecast.value = fc.forecast || []
   } finally {
     loading.value = false

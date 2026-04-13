@@ -23,10 +23,10 @@ def create_app():
         from app import models  # noqa: F401 - 确保所有模型被导入
         db.create_all()
 
-        # 自动检测并补充数据到今天（开发环境自动刷新 mock 数据）
+        # 启动时自动补充最新空气质量数据（Open-Meteo 真实 API）
         try:
-            from app.services.mock_data import refresh_records
-            refresh_records()
+            from app.services.aqi_service import refresh_realtime
+            refresh_realtime()
         except Exception as e:
             print(f'[Auto-refresh] 跳过: {e}')
 
@@ -63,11 +63,43 @@ def _register_commands(app):
         anomaly_results = run_all_anomaly_detection()
         click.echo(f'异常检测完成: {len(anomaly_results)} 条记录')
 
+    @app.cli.command('import-aqi')
+    @click.option('--start', default='2022-09-01', help='起始日期 (YYYY-MM-DD)')
+    @click.option('--end', default=None, help='截止日期，默认今天')
+    @click.option('--clear', is_flag=True, help='导入前清空旧的空气质量记录')
+    def import_aqi_command(start, end, clear):
+        """从 Open-Meteo 导入真实空气质量历史数据"""
+        from app.services.aqi_service import import_all_cities
+        from app.models import AirQualityRecord
+
+        if clear:
+            count = AirQualityRecord.query.count()
+            if count > 0:
+                click.echo(f'正在清空 {count} 条旧记录...')
+                AirQualityRecord.query.delete()
+                db.session.commit()
+                click.echo('旧记录已清空')
+
+        click.echo(f'开始从 Open-Meteo 导入真实空气质量数据...')
+        click.echo(f'日期范围: {start} ~ {end or "今天"}')
+        total = import_all_cities(start_date=start, end_date=end)
+        if total > 0:
+            click.echo(f'导入完成! 共 {total} 条记录')
+            click.echo('提示: 可运行 flask analyze 重新计算预测和异常检测')
+
+    @app.cli.command('fill-gaps')
+    def fill_gaps_command():
+        """检测并补充缺失的空气质量数据（带重试）"""
+        from app.services.aqi_service import fill_gaps
+        click.echo('正在检测数据缺口并补充...')
+        total = fill_gaps()
+        click.echo(f'补充完成! 共 {total} 条')
+
     @app.cli.command('refresh')
     def refresh_command():
-        """将 mock 数据续期到今天（自动补充缺口天数）"""
-        from app.services.mock_data import refresh_records
-        total = refresh_records()
+        """补充最新空气质量数据到今天（从 Open-Meteo 真实 API）"""
+        from app.services.aqi_service import refresh_realtime
+        total = refresh_realtime()
         if total > 0:
             click.echo(f'数据刷新完成，共补充 {total} 条记录')
             click.echo('提示: 可运行 flask analyze 重新计算预测和异常检测')

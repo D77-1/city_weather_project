@@ -3,7 +3,7 @@
     <AppHeader @city-change="onCityChange" />
 
     <div v-loading="loading">
-      <section class="page-section detail-hero" v-if="latestCity">
+      <section class="page-section detail-hero" v-if="displayData.aqi != null">
         <div class="section-heading">
           <span class="section-kicker">CITY REPORT</span>
           <h2 class="section-title">城市空气质量解读</h2>
@@ -20,11 +20,11 @@
             </div>
 
             <div class="detail-aqi-row">
-              <span class="detail-aqi-value" :style="{ color: aqiColor(latestCity.aqi) }">{{ latestCity.aqi }}</span>
+              <span class="detail-aqi-value" :style="{ color: aqiColor(displayData.aqi) }">{{ displayData.aqi }}</span>
               <div class="detail-aqi-meta">
-                <strong>{{ latestCity.qualityLevel }}</strong>
-                <span>数据日期：{{ latestCity.recordDate || '--' }}</span>
-                <span>数据源：{{ latestCity.dataSource || 'local_db_daily_avg' }}</span>
+                <strong>{{ displayData.qualityLevel }}</strong>
+                <span>数据来源：{{ displayData.source }}</span>
+                <span>更新时间：{{ displayData.updateTime || '--' }}</span>
               </div>
             </div>
 
@@ -156,6 +156,50 @@
         </div>
       </section>
 
+      <section class="page-section" v-if="comparisonRows.length">
+        <div class="section-heading compact-heading">
+          <span class="section-kicker">EVALUATION</span>
+          <h2 class="section-title">模型准确性对比评估</h2>
+        </div>
+        <el-card class="eval-card">
+          <template #header>
+            <div class="card-header card-header--stacked">
+              <div>
+                <span>{{ metricLabel }} 预测算法精度对比</span>
+                <p>基于历史回测，对 6 种预测模型的误差指标进行横向对比，MAPE 越低越优。</p>
+              </div>
+            </div>
+          </template>
+          <el-table :data="comparisonRows" stripe size="small" :default-sort="{ prop: 'mape', order: 'ascending' }">
+            <el-table-column prop="label" label="算法" width="160">
+              <template #default="{ row }">
+                <div class="algo-cell">
+                  <span>{{ row.label }}</span>
+                  <el-tag v-if="row.isBest" type="success" size="small" effect="dark">推荐</el-tag>
+                  <el-tag v-if="!row.available" type="info" size="small">不可用</el-tag>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="mae" label="MAE" width="100" sortable :formatter="(r,c,v) => v ?? '--'" />
+            <el-table-column prop="rmse" label="RMSE" width="100" sortable :formatter="(r,c,v) => v ?? '--'" />
+            <el-table-column prop="mape" label="MAPE(%)" width="110" sortable>
+              <template #default="{ row }">
+                <span :class="{ 'best-val': row.isBest }">{{ row.mape != null ? row.mape + '%' : '--' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="r2" label="R²" width="100" sortable :formatter="(r,c,v) => v ?? '--'" />
+            <el-table-column prop="statusText" label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.available ? 'success' : 'warning'" size="small">{{ row.statusText }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="eval-note">
+            <p>MAE: 平均绝对误差 | RMSE: 均方根误差 | MAPE: 平均绝对百分比误差 | R²: 拟合优度（越接近 1 越好）</p>
+          </div>
+        </el-card>
+      </section>
+
       <section class="page-section detail-explain-grid">
         <div class="section-heading">
           <span class="section-kicker">INTERPRETATION</span>
@@ -171,9 +215,9 @@
           </div>
         </el-card>
         <HealthAdvice
-          v-if="latestCity"
-          :aqi="latestCity.aqi"
-          :quality-level="latestCity.qualityLevel"
+          v-if="displayData.aqi != null"
+          :aqi="displayData.aqi"
+          :quality-level="displayData.qualityLevel"
           :risk-level="aqStore.riskResult?.level"
           :future-summary="aqStore.riskResult?.summary"
           :main-pollutants="(aqStore.riskResult?.drivers || []).slice(0, 3).map(d => d.factor)"
@@ -284,8 +328,60 @@ const metricLabel = computed(() => ({ aqi: 'AQI', pm25: 'PM2.5', pm10: 'PM10', o
 const algorithmLabel = computed(() => algorithmText(selectedAlgorithm.value))
 const anomalyMethodLabel = computed(() => anomalyMethodText(selectedAnomalyMethod.value))
 const latestCity = computed(() => aqStore.latestData.find((d) => d.cityId === city.value?.id))
+// 实时数据优先，fallback 到数据库值
+const displayData = computed(() => {
+  const rt = aqStore.realtimeLatest
+  const db = latestCity.value
+  if (rt?.aqi != null) {
+    return {
+      aqi: rt.aqi,
+      qualityLevel: rt.qualityLevel || db?.qualityLevel,
+      pm25: rt.pm25 ?? db?.pm25,
+      pm10: rt.pm10 ?? db?.pm10,
+      so2: rt.so2 ?? db?.so2,
+      no2: rt.no2 ?? db?.no2,
+      co: rt.co ?? db?.co,
+      o3: rt.o3 ?? db?.o3,
+      source: 'Open-Meteo 实时',
+      updateTime: rt.updateTime || '',
+    }
+  }
+  if (!db) return {}
+  return { ...db, source: db.dataSource || 'local_db_daily_avg', updateTime: db.recordDate || '' }
+})
 const combinedTrend = computed(() => aqStore.trendWithPrediction)
 const referenceLabel = computed(() => aqStore.predictionMeta?.referenceLabel || '参考线')
+
+// 算法精度对比表数据
+const comparisonRows = computed(() => {
+  const comp = aqStore.predictionResult?.comparison || []
+  if (!comp.length) return []
+
+  const algoLabels = {
+    moving_average: '移动平均 (MA)',
+    weighted_moving_average: '加权移动平均 (WMA)',
+    linear_regression: '线性回归 (LR)',
+    holt_winters: 'Holt-Winters 指数平滑',
+    arima: 'ARIMA 时序模型',
+    lstm: 'LSTM 深度学习',
+  }
+
+  // 找 MAPE 最低的作为推荐
+  const validComps = comp.filter(c => c.mape != null && c.available !== false)
+  const bestMape = validComps.length ? Math.min(...validComps.map(c => c.mape)) : null
+
+  return comp.map(c => ({
+    algorithm: c.algorithm,
+    label: algoLabels[c.algorithm] || c.algorithm,
+    mae: c.mae,
+    rmse: c.rmse,
+    mape: c.mape,
+    r2: c.r2,
+    available: c.available !== false,
+    statusText: c.available !== false ? '可用' : '回退',
+    isBest: c.mape === bestMape && c.available !== false,
+  }))
+})
 const metricCards = computed(() => {
   const source = aqStore.riskResult?.metricPredictions || {}
   return [
@@ -296,8 +392,8 @@ const metricCards = computed(() => {
   ]
 })
 const pollutantCards = computed(() => {
-  const c = latestCity.value
-  if (!c) return []
+  const c = displayData.value
+  if (!c || c.aqi == null) return []
   return [
     { label: 'PM2.5', value: c.pm25, unit: 'μg/m³' },
     { label: 'PM10', value: c.pm10, unit: 'μg/m³' },
@@ -319,8 +415,8 @@ const realtimeCompareRows = computed(() => {
   ]
 })
 const pollutantTable = computed(() => {
-  const c = latestCity.value
-  if (!c) return []
+  const c = displayData.value
+  if (!c || c.aqi == null) return []
   return [
     { name: 'PM2.5', value: c.pm25, unit: 'μg/m³', limit: 75 },
     { name: 'PM10', value: c.pm10, unit: 'μg/m³', limit: 150 },
@@ -639,6 +735,33 @@ onMounted(async () => {
 
 .risk-card {
   padding: 18px;
+}
+
+.eval-card {
+  background: rgba(255, 252, 247, 0.78) !important;
+}
+
+.algo-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.best-val {
+  color: #2d6a4f;
+  font-weight: 700;
+}
+
+.eval-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(30, 92, 90, 0.05);
+}
+
+.eval-note p {
+  font-size: 12px;
+  color: var(--aq-ink-soft);
 }
 
 @media (max-width: 1280px) {

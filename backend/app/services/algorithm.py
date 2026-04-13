@@ -734,9 +734,9 @@ def iqr_detect(city_id, metric='aqi', days=90, multiplier=1.5):
     q1 = float(np.percentile(values, 25))
     q3 = float(np.percentile(values, 75))
     iqr = q3 - q1
-    lower_bound = q1 - multiplier * iqr
+    lower_bound = max(0.0, q1 - multiplier * iqr)
     upper_bound = q3 + multiplier * iqr
-    extreme_lower = q1 - 3.0 * iqr
+    extreme_lower = max(0.0, q1 - 3.0 * iqr)
     extreme_upper = q3 + 3.0 * iqr
 
     anomalies = []

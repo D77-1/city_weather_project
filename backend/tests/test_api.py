@@ -80,7 +80,10 @@ test("GET /api/air-quality/ranking", client.get('/api/air-quality/ranking?order=
      lambda d: assert_true(len(d) == 10 and d[0]['aqi'] >= d[-1]['aqi'], "排序正确"))
 
 test("GET /api/air-quality/map-data", client.get('/api/air-quality/map-data'),
-     lambda d: assert_true(len(d) >= 20 and len(d[0]['value']) == 3, "有坐标+AQI"))
+     lambda d: assert_true(
+         len(d) >= 20 and len(d[0]['value']) == 3 and 'cityId' in d[0] and 'name' in d[0],
+         f"返回城市数={len(d)}"
+     ))
 
 # --- 预测 ---
 print("\n[预测 API]")
