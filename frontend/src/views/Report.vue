@@ -217,8 +217,8 @@ const histogramOption = computed(() => {
   return {
     tooltip: { trigger: 'axis' },
     grid: { left: 50, right: 20, top: 24, bottom: 40 },
-    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#7a878b' } },
-    yAxis: { type: 'value', name: '天数', nameTextStyle: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9bb0c8' } },
+    yAxis: { type: 'value', name: '天数', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
     series: [{ type: 'bar', data: counts.map((v, i) => ({ value: v, itemStyle: { color: colors[i], borderRadius: [10, 10, 0, 0] } })), barWidth: '60%' }],
   }
 })
@@ -239,7 +239,7 @@ const pieOption = computed(() => {
     series: [{
       type: 'pie', radius: ['42%', '72%'],
       data: levels.map((n, i) => ({ name: n, value: counts[i], itemStyle: { color: colors[i] } })).filter(d => d.value > 0),
-      label: { formatter: '{b}\n{d}%', fontSize: 11, color: '#4a5a61' },
+      label: { formatter: '{b}\n{d}%', fontSize: 11, color: '#b7c8dc' },
     }],
   }
 })
@@ -257,12 +257,12 @@ const monthlyOption = computed(() => {
   return {
     tooltip: { trigger: 'axis' },
     grid: { left: 50, right: 20, top: 24, bottom: 40 },
-    xAxis: { type: 'category', data: months, axisLabel: { color: '#7a878b' } },
-    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
+    xAxis: { type: 'category', data: months, axisLabel: { color: '#9bb0c8' } },
+    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
     series: [{
       type: 'bar', data: avgs,
-      itemStyle: { color: (p) => p.value > 100 ? '#8d3d32' : p.value > 50 ? '#a8743f' : '#2d6a4f', borderRadius: [10, 10, 0, 0] },
-      label: { show: true, position: 'top', fontSize: 10, color: '#4a5a61' },
+      itemStyle: { color: (p) => p.value > 100 ? '#ff6b81' : p.value > 50 ? '#f0b65a' : '#32d296', borderRadius: [10, 10, 0, 0] },
+      label: { show: true, position: 'top', fontSize: 10, color: '#b7c8dc' },
     }],
   }
 })
@@ -288,10 +288,10 @@ const pollutantMonthlyOption = computed(() => {
   ]
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: items.map(i => i.name), bottom: 5, textStyle: { color: '#4a5a61' } },
+    legend: { data: items.map(i => i.name), bottom: 5, textStyle: { color: '#b7c8dc' } },
     grid: { left: 50, right: 20, top: 24, bottom: 50 },
-    xAxis: { type: 'category', data: months, axisLabel: { color: '#7a878b' } },
-    yAxis: { type: 'value', name: 'μg/m³', nameTextStyle: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
+    xAxis: { type: 'category', data: months, axisLabel: { color: '#9bb0c8' } },
+    yAxis: { type: 'value', name: 'μg/m³', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
     series: items.map(item => ({
       name: item.name, type: 'line', smooth: true, symbol: 'none',
       data: months.map(m => avg(monthMap[m][item.key])),
@@ -336,9 +336,9 @@ const heatmapOption = computed(() => {
   return {
     tooltip: { formatter: p => `${metrics[p.value[1]]} vs ${metrics[p.value[0]]}<br/>相关系数: ${p.value[2]}` },
     grid: { left: 70, right: 40, top: 10, bottom: 50 },
-    xAxis: { type: 'category', data: metrics, axisLabel: { color: '#4a5a61' }, splitArea: { show: true } },
-    yAxis: { type: 'category', data: metrics, axisLabel: { color: '#4a5a61' }, splitArea: { show: true } },
-    visualMap: { min: -1, max: 1, calculable: true, orient: 'vertical', right: 0, top: 'center', inRange: { color: ['#2d6a4f', '#f5f1eb', '#b42318'] }, textStyle: { color: '#7a878b' } },
+    xAxis: { type: 'category', data: metrics, axisLabel: { color: '#9bb0c8' }, splitArea: { show: true, areaStyle: { color: ['rgba(124,154,188,0.04)', 'rgba(124,154,188,0.08)'] } } },
+    yAxis: { type: 'category', data: metrics, axisLabel: { color: '#9bb0c8' }, splitArea: { show: true, areaStyle: { color: ['rgba(124,154,188,0.04)', 'rgba(124,154,188,0.08)'] } } },
+    visualMap: { min: -1, max: 1, calculable: true, orient: 'vertical', right: 0, top: 'center', inRange: { color: ['#32d296', '#1a2e3d', '#ff6b81'] }, textStyle: { color: '#9bb0c8' } },
     series: [{
       type: 'heatmap', data,
       label: { show: true, formatter: p => p.value[2].toFixed(2), fontSize: 11 },
@@ -392,8 +392,8 @@ const boxplotOption = computed(() => {
       },
     },
     grid: { left: 55, right: 20, top: 20, bottom: 40 },
-    xAxis: { type: 'category', data: labels, axisLabel: { color: '#4a5a61', fontWeight: 'bold' } },
-    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
+    xAxis: { type: 'category', data: labels, axisLabel: { color: '#9bb0c8', fontWeight: 'bold' } },
+    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
     series: [{
       type: 'boxplot',
       data: boxData.map((d, i) => ({ value: d, itemStyle: { color: 'rgba(30,92,90,0.12)', borderColor: colors[i], borderWidth: 2 } })),
@@ -494,11 +494,7 @@ onMounted(async () => {
   padding-bottom: 28px;
 }
 
-.intro-card,
-.stat-card,
-.report-card {
-  background: rgba(255, 252, 247, 0.78) !important;
-}
+/* 卡片使用全局暗色主题，不再单独覆盖 */
 
 .intro-topbar,
 .card-header,
@@ -585,8 +581,8 @@ onMounted(async () => {
 .fc-card {
   flex: 0 0 132px;
   text-align: center;
-  background: linear-gradient(180deg, rgba(30, 92, 90, 0.06), rgba(168, 116, 63, 0.05));
-  border: 1px solid rgba(26, 37, 41, 0.06);
+  background: linear-gradient(180deg, rgba(39, 211, 195, 0.06), rgba(110, 168, 255, 0.05));
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 16px 10px;
 }

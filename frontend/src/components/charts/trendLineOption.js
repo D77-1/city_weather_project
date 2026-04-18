@@ -28,9 +28,9 @@ export function buildTrendLineOption({
       smooth: true,
       symbol: d.dates.length > 60 ? 'none' : 'circle',
       symbolSize: 4,
-      lineStyle: { width: 2.5, color: '#1e5c5a' },
-      itemStyle: { color: '#1e5c5a' },
-      areaStyle: { color: 'rgba(30, 92, 90, 0.08)' },
+      lineStyle: { width: 2.5, color: '#27d3c3' },
+      itemStyle: { color: '#27d3c3' },
+      areaStyle: { color: 'rgba(39, 211, 195, 0.08)' },
       sampling: 'lttb',
       large: d.dates.length > 200,
       z: 3,
@@ -44,7 +44,7 @@ export function buildTrendLineOption({
       data: referenceSeries,
       smooth: true,
       symbol: 'none',
-      lineStyle: { width: 2, type: 'dashed', color: '#7b8c87' },
+      lineStyle: { width: 2, type: 'dashed', color: '#5a7a8a' },
       z: 2,
     })
   }
@@ -120,20 +120,19 @@ export function buildTrendLineOption({
       textStyle: {
         fontSize: 15,
         fontWeight: 700,
-        color: '#1a2529',
-        fontFamily: 'Iowan Old Style, Palatino Linotype, Book Antiqua, Source Han Serif SC, Songti SC, serif',
+        color: '#edf6ff',
       },
     },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(255, 252, 247, 0.96)',
-      borderColor: 'rgba(168,116,63,0.22)',
+      backgroundColor: 'rgba(10, 21, 37, 0.95)',
+      borderColor: 'rgba(124, 154, 188, 0.22)',
       borderWidth: 1,
-      textStyle: { color: '#1a2529' },
-      extraCssText: 'box-shadow: 0 14px 34px rgba(33,28,21,0.10); border-radius: 14px;',
+      textStyle: { color: '#edf6ff' },
+      extraCssText: 'box-shadow: 0 14px 34px rgba(0,0,0,0.3); border-radius: 14px;',
       formatter: (params) => {
         const date = params[0]?.axisValue || ''
-        let html = `<div style="font-weight:700;margin-bottom:6px">${date}</div>`
+        let html = `<div style="font-weight:700;margin-bottom:6px;color:#edf6ff">${date}</div>`
         for (const p of params) {
           if (p.seriesName.startsWith('_')) continue
           if (p.value != null) html += `<div style="margin:2px 0">${p.marker} ${p.seriesName}: ${p.value}</div>`
@@ -141,7 +140,7 @@ export function buildTrendLineOption({
         const upperP = params.find(p => p.seriesName === '预测波动范围')
         const lowerP = params.find(p => p.seriesName === '_lower')
         if (upperP?.value != null && lowerP?.value != null) {
-          html += `<div style="margin-top:6px;color:#7a878b">预测在 ${lowerP.value} ~ ${upperP.value} 之间波动</div>`
+          html += `<div style="margin-top:6px;color:#7c91ab">预测在 ${lowerP.value} ~ ${upperP.value} 之间波动</div>`
         }
         return html
       },
@@ -150,7 +149,7 @@ export function buildTrendLineOption({
       data: legendData,
       top: 14,
       right: 12,
-      textStyle: { fontSize: 11, color: '#4a5a61' },
+      textStyle: { fontSize: 11, color: '#9bb0c8' },
       itemWidth: 18,
       itemHeight: 10,
     },
@@ -159,13 +158,13 @@ export function buildTrendLineOption({
       type: 'category',
       data: d.dates,
       boundaryGap: false,
-      axisLine: { lineStyle: { color: 'rgba(26,37,41,0.18)' } },
+      axisLine: { lineStyle: { color: 'rgba(124, 154, 188, 0.18)' } },
       axisTick: { show: false },
       axisLabel: {
         rotate: 40,
         fontSize: 10,
         interval: labelInterval,
-        color: '#7a878b',
+        color: '#7c91ab',
         formatter: (val) => val.slice(5),
       },
       splitLine: { show: false },
@@ -177,9 +176,9 @@ export function buildTrendLineOption({
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: { color: '#7a878b' },
-      splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } },
+      splitLine: { lineStyle: { color: 'rgba(124, 154, 188, 0.08)' } },
     },
-    dataZoom: [{ type: 'inside', start: d.dates.length > 60 ? 40 : 0, end: 100 }],
+    dataZoom: [{ type: 'inside', start: 0, end: 100 }],
     series,
   }
 }

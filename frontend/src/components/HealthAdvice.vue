@@ -74,7 +74,7 @@ const mergedGroups = computed(() => {
   padding: 18px 20px;
   border-radius: 20px;
   margin: 8px 0;
-  border: 1px solid rgba(26, 37, 41, 0.08);
+  border: 1px solid var(--border-color);
   box-shadow: var(--aq-shadow-soft);
 }
 
@@ -90,7 +90,7 @@ const mergedGroups = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .advice-body {
@@ -110,7 +110,7 @@ const mergedGroups = computed(() => {
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(26, 37, 41, 0.56);
+  color: var(--text-muted);
 }
 
 .advice-title {
@@ -125,15 +125,16 @@ const mergedGroups = computed(() => {
 .future-summary {
   font-size: 13px;
   line-height: 1.75;
-  color: var(--aq-ink-soft);
+  color: var(--text-secondary);
 }
 
 .risk-pill {
   font-size: 11px;
-  background: rgba(255,255,255,0.72);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
   padding: 5px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(26, 37, 41, 0.08);
+  border: 1px solid var(--border-color);
   white-space: nowrap;
 }
 
@@ -147,10 +148,10 @@ const mergedGroups = computed(() => {
   font-size: 11px;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.68);
-  border: 1px solid rgba(26, 37, 41, 0.06);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
   white-space: nowrap;
-  color: var(--aq-ink);
+  color: var(--text-secondary);
 }
 
 .advice-close {
@@ -160,7 +161,7 @@ const mergedGroups = computed(() => {
   background: none;
   border: none;
   cursor: pointer;
-  color: inherit;
+  color: var(--text-muted);
   opacity: 0.5;
   padding: 4px;
   border-radius: 8px;
@@ -171,38 +172,45 @@ const mergedGroups = computed(() => {
 
 .advice-close:hover {
   opacity: 1;
-  background: rgba(0,0,0,0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
+/* 各等级暗色适配：半透明底色 + 亮色文字 */
 .level-good {
-  background: linear-gradient(180deg, rgba(226, 244, 233, 0.92), rgba(241, 249, 244, 0.82));
+  background: linear-gradient(180deg, rgba(45, 106, 79, 0.22), rgba(45, 106, 79, 0.10));
+  border-color: rgba(50, 210, 150, 0.25);
 }
-.level-good .advice-title, .level-good .advice-icon { color: #2d6a4f; }
+.level-good .advice-title, .level-good .advice-icon { color: #5ee8a0; }
 
 .level-moderate {
-  background: linear-gradient(180deg, rgba(249, 239, 220, 0.92), rgba(252, 246, 234, 0.82));
+  background: linear-gradient(180deg, rgba(168, 116, 63, 0.22), rgba(168, 116, 63, 0.10));
+  border-color: rgba(240, 182, 90, 0.25);
 }
-.level-moderate .advice-title, .level-moderate .advice-icon { color: #a8743f; }
+.level-moderate .advice-title, .level-moderate .advice-icon { color: #f0c672; }
 
 .level-unhealthy1 {
-  background: linear-gradient(180deg, rgba(251, 233, 225, 0.92), rgba(252, 242, 237, 0.82));
+  background: linear-gradient(180deg, rgba(200, 107, 75, 0.22), rgba(200, 107, 75, 0.10));
+  border-color: rgba(224, 122, 95, 0.25);
 }
-.level-unhealthy1 .advice-title, .level-unhealthy1 .advice-icon { color: #c86b4b; }
+.level-unhealthy1 .advice-title, .level-unhealthy1 .advice-icon { color: #f0a07a; }
 
 .level-unhealthy2 {
-  background: linear-gradient(180deg, rgba(247, 226, 224, 0.92), rgba(251, 238, 236, 0.82));
+  background: linear-gradient(180deg, rgba(180, 35, 24, 0.22), rgba(180, 35, 24, 0.10));
+  border-color: rgba(255, 107, 129, 0.25);
 }
-.level-unhealthy2 .advice-title, .level-unhealthy2 .advice-icon { color: #b42318; }
+.level-unhealthy2 .advice-title, .level-unhealthy2 .advice-icon { color: #ff8090; }
 
 .level-very-unhealthy {
-  background: linear-gradient(180deg, rgba(241, 223, 228, 0.92), rgba(246, 237, 239, 0.82));
+  background: linear-gradient(180deg, rgba(120, 1, 22, 0.28), rgba(120, 1, 22, 0.12));
+  border-color: rgba(200, 60, 80, 0.25);
 }
-.level-very-unhealthy .advice-title, .level-very-unhealthy .advice-icon { color: #780116; }
+.level-very-unhealthy .advice-title, .level-very-unhealthy .advice-icon { color: #f06080; }
 
 .level-hazardous {
-  background: linear-gradient(180deg, rgba(233, 216, 220, 0.94), rgba(240, 231, 234, 0.84));
+  background: linear-gradient(180deg, rgba(74, 0, 16, 0.32), rgba(74, 0, 16, 0.14));
+  border-color: rgba(180, 40, 60, 0.30);
 }
-.level-hazardous .advice-title, .level-hazardous .advice-icon { color: #4a0010; }
+.level-hazardous .advice-title, .level-hazardous .advice-icon { color: #e04868; }
 
 @media (max-width: 900px) {
   .health-advice {

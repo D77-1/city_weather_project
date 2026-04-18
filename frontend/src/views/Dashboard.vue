@@ -2,257 +2,203 @@
   <div class="dashboard page-shell">
     <AppHeader @city-change="onCityChange" />
 
-    <section class="page-section hero-section">
-      <div class="section-heading">
-        <span class="section-kicker">CITY OVERVIEW</span>
-        <h2 class="section-title">城市空气态势总览</h2>
+    <section class="hero-section">
+      <div class="hero-copy panel-surface">
+        <div class="hero-eyebrow">National Air Quality Overview</div>
+        <div class="hero-title-row">
+          <div>
+            <h2 class="hero-title">全国空气质量态势总览</h2>
+            <p class="hero-subtitle">以城市监测、气象变化和异常波动为核心，快速查看当前城市的污染等级、天气背景与重点关注信息。</p>
+          </div>
+          <div class="hero-city-chip">
+            <span class="hero-chip-label">当前对象</span>
+            <span class="hero-chip-value">{{ selectedCityName }}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="hero-band">
-        <el-card class="hero-main-card">
-          <div class="hero-card-top">
-            <div>
-              <p class="hero-label">当前展示城市</p>
-              <div class="hero-city-line">
-                <strong>{{ selectedCityName }}</strong>
-                <el-tag :type="aqiTagType(displayData.aqi || 0)" size="small">{{ displayData.qualityLevel ?? '--' }}</el-tag>
-              </div>
-            </div>
-            <span class="hero-panel-tag">DEFENSE PANEL</span>
+      <div class="hero-status-grid">
+        <el-card class="kpi-card kpi-hero" shadow="hover">
+          <div class="hero-kpi-top">
+            <span class="kpi-trend">实时监测</span>
           </div>
-
-          <div class="hero-aqi-block">
-            <div class="hero-aqi-value" :style="{ color: aqiColor(displayData.aqi) }">{{ displayData.aqi ?? '--' }}</div>
-            <div class="hero-aqi-copy">
-              <p>空气质量指数 AQI</p>
-              <span>数据来源：{{ displayData.source }}</span>
-              <span>更新时间：{{ displayData.updateTime || '--' }}</span>
-            </div>
-          </div>
-
-          <div class="hero-divider" />
-
-          <div class="hero-footnote">
-            <span class="footnote-label">展示说明</span>
-            <p>本页优先展示城市当前状态、全国空间分布与未来风险变化，适合答辩时快速说明系统的数据接入、可视化与分析链路。</p>
-          </div>
+          <div class="kpi-value" :style="{ color: aqiColor(currentCityLatest.aqi) }">{{ currentCityLatest.aqi ?? '--' }}</div>
+          <div class="kpi-label">AQI 指数</div>
+          <div class="kpi-level" :style="{ color: aqiColor(currentCityLatest.aqi) }">{{ currentCityLatest.qualityLevel ?? '--' }}</div>
         </el-card>
 
-        <div class="hero-side-grid">
-          <el-card v-for="item in overviewCards" :key="item.label" class="hero-metric-card">
-            <span class="metric-kicker">{{ item.label }}</span>
-            <b>{{ item.value }}</b>
-            <small>核心观测指标</small>
+        <div class="kpi-side">
+          <el-card class="kpi-card kpi-small" shadow="hover">
+            <div class="kpi-label">PM2.5</div>
+            <div class="kpi-value-sm" style="color: var(--primary)">{{ currentCityLatest.pm25 != null ? `${currentCityLatest.pm25}` : '--' }}</div>
+            <div class="kpi-label"> μg/m³</div>
+          </el-card>
+          <el-card class="kpi-card kpi-small" shadow="hover">
+            <div class="kpi-label">PM10</div>
+            <div class="kpi-value-sm" style="color: var(--accent)">{{ currentCityLatest.pm10 != null ? `${currentCityLatest.pm10}` : '--' }}</div>
+            <div class="kpi-label">μg/m³</div>
+          </el-card>
+          <el-card class="kpi-card kpi-small" shadow="hover">
+            <div class="kpi-value-sm" style="color: var(--success)">{{ aqStore.latestData.length ?? '--' }}</div>
+            <div class="kpi-label">在监测的城市</div>
           </el-card>
         </div>
       </div>
     </section>
 
-    <section class="page-section dashboard-grid">
-      <div class="map-column">
-        <div class="section-heading compact-heading">
-          <span class="section-kicker">VISUALIZATION</span>
-          <h2 class="section-title">全国空气态势</h2>
+    <div class="weather-bar panel-surface" v-if="currentCityLatest.temperature != null">
+      <div class="weather-item weather-main">
+        <div class="weather-icon-wrap">
+          <Icon :icon="weatherIcon(currentCityLatest.weatherCondition)" width="38" />
         </div>
-        <el-card class="map-panel map-card">
+        <div class="weather-main-text">
+          <span class="weather-cond">{{ currentCityLatest.weatherCondition || '--' }}</span>
+          <span class="weather-temp">{{ currentCityLatest.temperature }}℃</span>
+        </div>
+      </div>
+      <div class="weather-divider"></div>
+      <div class="weather-item">
+        <Icon icon="meteocons:humidity-fill" width="22" />
+        <div><span class="weather-val">{{ currentCityLatest.humidity }}%</span><span class="weather-label">湿度</span></div>
+      </div>
+      <div class="weather-item">
+        <Icon icon="meteocons:wind-fill" width="22" />
+        <div><span class="weather-val">{{ currentCityLatest.windDirection }} {{ currentCityLatest.windSpeed }}m/s</span><span class="weather-label">风力</span></div>
+      </div>
+      <div class="weather-item" v-if="currentCityLatest.rainfall > 0">
+        <Icon icon="meteocons:raindrops-fill" width="22" />
+        <div><span class="weather-val">{{ currentCityLatest.rainfall }}mm</span><span class="weather-label">降水</span></div>
+      </div>
+      <template v-if="realtimeWeather">
+        <div class="weather-divider"></div>
+        <div class="weather-item realtime-tag">
+          <Icon :icon="weatherIcon(realtimeWeather.weatherText)" width="28" />
+          <div>
+            <span class="weather-val">{{ realtimeWeather.weatherText }} {{ realtimeWeather.temperature }}℃</span>
+            <span class="weather-label">Open-Meteo 实时</span>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div class="forecast-strip panel-surface" v-if="forecastData.length > 0">
+      <div class="strip-head">
+        <span class="panel-kicker">7-Day Weather Window</span>
+        <span class="strip-tip">辅助理解天气背景与空气质量变化</span>
+      </div>
+      <div class="forecast-scroll">
+        <div class="fc-item" v-for="f in forecastData" :key="f.date">
+          <div class="fc-day">{{ f.weekday }}</div>
+          <Icon :icon="weatherIcon(f.weatherText || f.emoji)" width="32" class="fc-icon" />
+          <div class="fc-text">{{ f.weatherText }}</div>
+          <div class="fc-temp">{{ f.tempMax }}° / {{ f.tempMin }}°</div>
+        </div>
+      </div>
+    </div>
+
+    <HealthAdvice
+      v-if="currentCityLatest.aqi != null"
+      :aqi="currentCityLatest.aqi"
+      :quality-level="currentCityLatest.qualityLevel"
+      style="margin: 0 24px"
+    />
+
+    <div class="realtime-aqi-bar panel-surface" v-if="realtimeAqi">
+      <div class="ra-badge">实时真实数据</div>
+      <div class="ra-item">
+        <span class="ra-label">AQI</span>
+        <span class="ra-val" :style="{ color: aqiColor(realtimeAqi.aqi) }">{{ realtimeAqi.aqi }}</span>
+      </div>
+      <div class="ra-item">
+        <span class="ra-label">PM2.5</span>
+        <span class="ra-val">{{ realtimeAqi.pm25 }}</span>
+      </div>
+      <div class="ra-item">
+        <span class="ra-label">PM10</span>
+        <span class="ra-val">{{ realtimeAqi.pm10 }}</span>
+      </div>
+      <div class="ra-item">
+        <span class="ra-label">NO₂</span>
+        <span class="ra-val">{{ realtimeAqi.no2 }}</span>
+      </div>
+      <div class="ra-item">
+        <span class="ra-label">O₃</span>
+        <span class="ra-val">{{ realtimeAqi.o3 }}</span>
+      </div>
+      <div class="ra-item">
+        <span class="ra-label">等级</span>
+        <span class="ra-val">{{ realtimeAqi.qualityLevel }}</span>
+      </div>
+      <div class="ra-source">来源: {{ realtimeAqi.source }}</div>
+    </div>
+
+    <div class="main-grid">
+      <div class="grid-left">
+        <el-card class="chart-card map-card panel-frame">
           <template #header>
-            <div class="card-header card-header--stacked">
+            <div class="panel-headline">
               <div>
-                <span>全国城市空气质量地图</span>
-                <p>从空间分布层面展示重点城市 AQI 水平与区域差异。</p>
+                <span class="panel-kicker">Spatial Monitoring</span>
+                <h3>全国空气质量空间分布</h3>
               </div>
+              <span class="panel-tip">点击地图中的城市进入详情页</span>
             </div>
           </template>
           <ChinaMap :data="aqStore.mapData" height="520px" @city-click="onMapCityClick" />
         </el-card>
       </div>
 
-      <div class="side-column">
-        <div class="section-heading compact-heading">
-          <span class="section-kicker">RANKING</span>
-          <h2 class="section-title">重点城市观察</h2>
-        </div>
-
-        <el-card class="side-panel">
+      <div class="grid-right">
+        <el-card class="rank-card panel-frame">
           <template #header>
             <div class="card-header">
               <div>
-                <span>城市空气质量排名</span>
-                <p>点击城市可进入详细分析页。</p>
+                <span class="panel-kicker">Ranking Monitor</span>
+                <h3>城市空气质量排名</h3>
               </div>
-              <el-button text size="small" @click="toggleRankOrder">{{ rankOrder === 'desc' ? '最优排序' : '最差排序' }}</el-button>
+              <el-button text size="small" @click="toggleRankOrder">
+                {{ rankOrder === 'desc' ? '最优排序' : '最差排序' }}
+              </el-button>
             </div>
           </template>
-          <div class="list-stack">
-            <div v-for="item in aqStore.rankingList" :key="item.cityId" class="rank-row" @click="onRankCityClick(item.cityId)">
-              <span class="rank-num">{{ item.rank }}</span>
+          <div class="rank-list">
+            <div
+              v-for="item in aqStore.rankingList"
+              :key="item.cityId"
+              class="rank-item"
+              @click="onRankCityClick(item.cityId)"
+            >
+              <span class="rank-num" :class="'rank-' + item.rank">{{ item.rank }}</span>
               <span class="rank-name">{{ item.cityName }}</span>
               <el-tag :type="aqiTagType(item.aqi)" size="small">{{ item.aqi }} {{ item.qualityLevel }}</el-tag>
             </div>
           </div>
         </el-card>
 
-        <!-- <el-card class="side-panel">
-          <template #header>
-            <div class="card-header card-header--stacked">
-              <div>
-                <span>未来 5 天风险</span>
-                <p>结合预测与风险评估结果生成答辩展示摘要。</p>
-              </div>
-            </div>
-          </template>
-          <div class="list-stack">
-            <div v-if="!futureRiskList.length" class="empty-tip">暂无风险数据</div>
-            <div v-for="item in futureRiskList" :key="item.date" class="risk-row">
-              <el-tag :type="riskTagType(item.level)" size="small">{{ riskLevelText(item.level) }}</el-tag>
-              <span>{{ item.date }}</span>
-              <b>{{ item.score }}</b>
-            </div>
-          </div>
-        </el-card> -->
-      </div>
-    </section>
-
-    <section class="page-section analysis-section">
-      <div class="section-heading">
-        <span class="section-kicker">ANALYSIS</span>
-        <h2 class="section-title">分析能力概览</h2>
-      </div>
-
-      <div class="analysis-cards">
-        <el-card class="analysis-card">
-          <template #header>
-            <div class="card-header card-header--stacked">
-              <div>
-                <span>预测摘要</span>
-                <p>当前算法与历史区间用于说明趋势预测能力。</p>
-              </div>
-            </div>
-          </template>
-          <div class="analysis-note-grid">
-            <div class="analysis-note-item">
-              <span>当前算法</span>
-              <b>{{ algorithmText(aqStore.predictionMeta?.selectedAlgorithm || selectedAlgorithm) }}</b>
-            </div>
-            <div class="analysis-note-item">
-              <span>历史区间</span>
-              <b>{{ predictionRangeText }}</b>
-            </div>
-            <div class="analysis-note-item">
-              <span>未来摘要</span>
-              <p>{{ aqStore.riskResult?.summary || '暂无结果' }}</p>
-            </div>
-          </div>
-        </el-card>
-
-        <el-card class="analysis-card">
-          <template #header>
-            <div class="card-header card-header--stacked">
-              <div>
-                <span>风险驱动因素</span>
-                <p>展示模型判断中贡献度较高的关键因子。</p>
-              </div>
-            </div>
-          </template>
-          <div class="list-stack">
-            <div v-for="item in topDrivers" :key="item.factor" class="driver-row">
-              <span>{{ item.label || item.factor }}</span>
-              <b>{{ item.contribution }}</b>
-            </div>
-          </div>
-        </el-card>
-        <el-card class="side-panel">
-          <template #header>
-            <div class="card-header card-header--stacked">
-              <div>
-                <span>未来 5 天风险</span>
-                <p>结合预测与风险评估结果生成答辩展示摘要。</p>
-              </div>
-            </div>
-          </template>
-          <div class="list-stack">
-            <div v-if="!futureRiskList.length" class="empty-tip">暂无风险数据</div>
-            <div v-for="item in futureRiskList" :key="item.date" class="risk-row">
-              <el-tag :type="riskTagType(item.level)" size="small">{{ riskLevelText(item.level) }}</el-tag>
-              <span>{{ item.date }}</span>
-              <b>{{ item.score }}</b>
-            </div>
-          </div>
-        </el-card>
-
-        <!-- <el-card class="analysis-card">
+        <el-card class="rank-card panel-frame anomaly-panel">
           <template #header>
             <div class="card-header">
               <div>
-                <span>算法状态</span>
-                <p>用于展示不同预测算法的当前可用情况。</p>
+                <span class="panel-kicker">Abnormal Signal</span>
+                <h3>近期异常记录</h3>
               </div>
-              <el-select v-model="selectedAlgorithm" size="small" style="width: 150px" @change="reloadPrediction">
-                <el-option v-for="item in algorithmOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
             </div>
           </template>
-          <div class="list-stack">
-            <div v-for="item in availabilityList" :key="item.key" class="driver-row">
-              <span>{{ item.label }}</span>
-              <el-tag :type="item.available ? 'success' : 'warning'" size="small">{{ item.available ? '可用' : '回退' }}</el-tag>
+          <div class="rank-list anomaly-list" style="max-height: 240px">
+            <div v-if="aqStore.anomalyList.length === 0" class="empty-tip">暂无异常数据</div>
+            <div v-for="a in aqStore.anomalyList.slice(0, 8)" :key="a.id" class="anomaly-item">
+              <el-tag :type="a.severity === 'severe' ? 'danger' : a.severity === 'moderate' ? 'warning' : 'info'" size="small">
+                {{ { severe: '严重', moderate: '中度', mild: '轻度' }[a.severity] || a.severity }}
+              </el-tag>
+              <span class="anomaly-text">{{ formatMetricName(a.metricName) }} = {{ a.actualValue }}</span>
+              <span class="anomaly-date">{{ formatMonthDay(a.recordTime) }}</span>
             </div>
           </div>
-        </el-card> -->
+        </el-card>
       </div>
-    </section>
+    </div>
 
-    <section class="page-section support-section">
-      <div class="section-heading">
-        <span class="section-kicker">SUPPORT</span>
-        <h2 class="section-title">辅助说明</h2>
-      </div>
-
-      <HealthAdvice
-        v-if="displayData.aqi"
-        :aqi="displayData.aqi"
-        :quality-level="displayData.qualityLevel"
-        :risk-level="aqStore.riskResult?.level"
-        :future-summary="aqStore.riskResult?.summary"
-        :main-pollutants="(aqStore.riskResult?.drivers || []).slice(0, 3).map(d => d.factor)"
-      />
-
-      <el-card v-if="realtimeCompareRows.length" class="support-card">
-        <template #header>
-          <div class="card-header">
-            <div>
-              <span>数据库值 vs 实时值</span>
-              <p>用于说明系统本地数据库与 Open-Meteo 接口之间的对照关系。</p>
-            </div>
-            <el-tag size="small" effect="plain">Open-Meteo 对照</el-tag>
-          </div>
-        </template>
-        <div class="realtime-topbar" v-if="aqStore.realtimeLatest?.source">
-          <div class="realtime-main">
-            <div class="realtime-city">{{ selectedCityName }} 实时空气质量</div>
-            <div class="realtime-source">{{ aqStore.realtimeLatest.source }}</div>
-          </div>
-          <div class="realtime-weather" v-if="aqStore.realtimeLatest.weather">
-            <span>{{ aqStore.realtimeLatest.weather.weatherEmoji || '' }} {{ aqStore.realtimeLatest.weather.weatherText || '天气' }}</span>
-            <b>{{ aqStore.realtimeLatest.weather.temperature ?? '--' }}℃</b>
-          </div>
-        </div>
-        <el-table :data="realtimeCompareRows" stripe size="small">
-          <el-table-column prop="name" label="指标" />
-          <el-table-column prop="dbValue" label="数据库最新值" />
-          <el-table-column prop="realValue" label="实时值" />
-          <el-table-column prop="diff" label="差值" />
-        </el-table>
-        <div class="realtime-pill-row" v-if="realtimePills.length">
-          <div v-for="item in realtimePills" :key="item.label" class="realtime-pill">
-            <span>{{ item.label }}</span>
-            <b>{{ item.value }}</b>
-          </div>
-        </div>
-      </el-card>
-
-      <AiChatWindow :city-id="cityStore.currentCityId" :city-name="selectedCityName" :context="aiContext" />
-    </section>
+    <AiChatWindow :city-id="cityStore.currentCityId" :city-name="selectedCityName" :context="aiContext" />
   </div>
 </template>
 
@@ -261,6 +207,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCityStore } from '@/stores/city'
 import { useAirQualityStore } from '@/stores/airQuality'
+import { anomalyApi, weatherApi, realAqiApi } from '@/api/modules'
+import { Icon } from '@iconify/vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import ChinaMap from '@/components/charts/ChinaMap.vue'
 import AiChatWindow from '@/components/ai/AiChatWindow.vue'
@@ -269,475 +217,703 @@ import HealthAdvice from '@/components/HealthAdvice.vue'
 const router = useRouter()
 const cityStore = useCityStore()
 const aqStore = useAirQualityStore()
+
 const rankOrder = ref('desc')
-const selectedAlgorithm = ref('holt_winters')
-const algorithmOptions = [
-  { label: '移动平均', value: 'moving_average' },
-  { label: '加权移动平均', value: 'weighted_moving_average' },
-  { label: '线性回归', value: 'linear_regression' },
-  { label: 'Holt-Winters', value: 'holt_winters' },
-  { label: 'ARIMA', value: 'arima' },
-  { label: 'LSTM', value: 'lstm' },
-]
+const realtimeWeather = ref(null)
+const forecastData = ref([])
+const realtimeAqi = ref(null)
+const cityRequestToken = ref(0)
+
+function resetCityDependentData() {
+  realtimeWeather.value = null
+  forecastData.value = []
+  realtimeAqi.value = null
+}
+
+function formatMetricName(metricName) {
+  return typeof metricName === 'string' ? metricName.toUpperCase() : '--'
+}
+
+function formatRecordDate(recordTime) {
+  return typeof recordTime === 'string' ? recordTime.slice(0, 10) : '--'
+}
+
+function formatMonthDay(recordTime) {
+  const dateText = formatRecordDate(recordTime)
+  return dateText !== '--' ? dateText.slice(5, 10) : '--'
+}
+
+function buildAiAnomalies(anomalies) {
+  return anomalies.slice(0, 3).map((a) => ({
+    date: formatRecordDate(a.recordTime),
+    metric: a.metricName ?? '--',
+    value: a.actualValue,
+    severity: a.severity,
+    type: a.anomalyType,
+  }))
+}
+
+async function syncCityData(cityId) {
+  if (!cityId) {
+    cityRequestToken.value += 1
+    resetCityDependentData()
+    aqStore.anomalyList = []
+    return
+  }
+  const requestToken = ++cityRequestToken.value
+  resetCityDependentData()
+  const anomalies = await anomalyApi.getList({ city_id: cityId, limit: 10 })
+  if (requestToken !== cityRequestToken.value || cityId !== cityStore.currentCityId) return
+  aqStore.anomalyList = anomalies
+  weatherApi.getRealtime(cityId)
+    .then((data) => {
+      if (requestToken === cityRequestToken.value && cityId === cityStore.currentCityId) {
+        realtimeWeather.value = data
+      }
+    })
+    .catch(() => {})
+  weatherApi.getForecast(cityId, 7)
+    .then((data) => {
+      if (requestToken === cityRequestToken.value && cityId === cityStore.currentCityId) {
+        forecastData.value = data.forecast || []
+      }
+    })
+    .catch(() => {})
+  realAqiApi.getRealtime(cityId)
+    .then((data) => {
+      if (requestToken === cityRequestToken.value && cityId === cityStore.currentCityId) {
+        realtimeAqi.value = data
+      }
+    })
+    .catch(() => {})
+}
 
 const selectedCityName = computed(() => cityStore.currentCity?.name || '全国')
-const currentCityLatest = computed(() => aqStore.latestData.find((d) => d.cityId === cityStore.currentCityId) || {})
-// 实时数据优先，fallback 到数据库值
-const displayData = computed(() => {
-  const rt = aqStore.realtimeLatest
-  const db = currentCityLatest.value
-  if (rt?.aqi != null) {
-    return {
-      aqi: rt.aqi,
-      qualityLevel: rt.qualityLevel || db.qualityLevel,
-      pm25: rt.pm25 ?? db.pm25,
-      pm10: rt.pm10 ?? db.pm10,
-      so2: rt.so2 ?? db.so2,
-      no2: rt.no2 ?? db.no2,
-      co: rt.co ?? db.co,
-      o3: rt.o3 ?? db.o3,
-      source: 'Open-Meteo 实时',
-      updateTime: rt.updateTime || '',
-    }
-  }
-  return { ...db, source: db.dataSource || 'local_db_daily_avg', updateTime: db.recordDate || '' }
-})
-const predictionRangeText = computed(() => {
-  const meta = aqStore.predictionMeta
-  if (!meta?.historyStart || !meta?.historyEnd) return '--'
-  return `${meta.historyStart} ~ ${meta.historyEnd}`
-})
-const overviewCards = computed(() => [
-  { label: '综合风险', value: aqStore.riskResult?.score ?? '--' },
-  { label: 'PM2.5', value: displayData.value.pm25 ?? '--' },
-  { label: 'PM10', value: displayData.value.pm10 ?? '--' },
-  { label: '实时天气', value: aqStore.realtimeLatest?.weather?.weatherText || '--' },
-])
-const topDrivers = computed(() => (aqStore.riskResult?.drivers || []).slice(0, 4))
-const futureRiskList = computed(() => (aqStore.riskResult?.futureRisk || []).slice(0, 5))
-const availabilityList = computed(() => Object.entries(aqStore.predictionMeta?.availability || {}).map(([key, value]) => ({
-  key,
-  label: algorithmText(key),
-  available: value.available,
-})))
-const realtimeCompareRows = computed(() => {
-  const dbRow = currentCityLatest.value
-  const rt = aqStore.realtimeLatest
-  if (!dbRow || !rt?.source) return []
-  return [
-    { name: 'AQI', dbValue: dbRow.aqi ?? '--', realValue: rt.aqi ?? '--', diff: diffText(dbRow.aqi, rt.aqi) },
-    { name: 'PM2.5', dbValue: dbRow.pm25 ?? '--', realValue: rt.pm25 ?? '--', diff: diffText(dbRow.pm25, rt.pm25) },
-    { name: 'PM10', dbValue: dbRow.pm10 ?? '--', realValue: rt.pm10 ?? '--', diff: diffText(dbRow.pm10, rt.pm10) },
-    { name: 'O₃', dbValue: dbRow.o3 ?? '--', realValue: rt.o3 ?? '--', diff: diffText(dbRow.o3, rt.o3) },
-  ]
-})
-const realtimePills = computed(() => {
-  const rt = aqStore.realtimeLatest
-  if (!rt?.source) return []
-  return [
-    { label: 'AQI', value: rt.aqi ?? '--' },
-    { label: 'PM2.5', value: rt.pm25 ?? '--' },
-    { label: 'PM10', value: rt.pm10 ?? '--' },
-    { label: 'O₃', value: rt.o3 ?? '--' },
-    { label: '降水', value: rt.weather?.rainfall != null ? `${rt.weather.rainfall} mm` : '--' },
-  ]
-})
+
+const currentCityLatest = computed(() =>
+  aqStore.latestData.find((d) => d.cityId === cityStore.currentCityId) || {}
+)
+
 const aiContext = computed(() => ({
   cityName: selectedCityName.value,
   current: currentCityLatest.value,
   prediction: aqStore.predictionResult?.predictions?.slice(0, 5),
-  selectedAlgorithm: aqStore.predictionResult?.selectedAlgorithm,
-  comparison: aqStore.predictionResult?.comparison || [],
-  risk: aqStore.riskResult,
-  multiMetricPrediction: aqStore.riskResult?.metricPredictions || {},
-  anomalies: aqStore.anomalyList.slice(0, 3).map((a) => ({
-    date: a.recordTime?.slice(0, 10),
-    metric: a.metricName,
-    value: a.actualValue,
-    severity: a.severity,
-    type: a.anomalyType,
-  })),
+  anomalies: buildAiAnomalies(aqStore.anomalyList),
 }))
 
-async function loadCityData(cityId) {
-  if (!cityId) return
+async function ensureInitialData() {
+  await cityStore.fetchCities()
   await Promise.all([
-    aqStore.fetchPrediction(cityId, 'aqi', 7, 5, selectedAlgorithm.value, true),
-    aqStore.fetchRealtimeLatest(cityId),
-    aqStore.fetchAnomalyList({ city_id: cityId, limit: 10 }),
-    aqStore.fetchRiskAssess(cityId, 5),
+    aqStore.fetchLatest(),
+    aqStore.fetchMapData(),
+    aqStore.fetchRanking(rankOrder.value, 10),
   ])
+  if (cityStore.cities.length > 0 && !cityStore.currentCityId) {
+    cityStore.selectCity(cityStore.cities[0].id)
+  } else if (cityStore.currentCityId) {
+    await syncCityData(cityStore.currentCityId)
+  }
 }
 
-function reloadPrediction() {
-  if (cityStore.currentCityId) loadCityData(cityStore.currentCityId)
+async function loadCityData(cityId) {
+  await syncCityData(cityId)
 }
-function onCityChange(cityId) {
-  cityStore.selectCity(cityId)
-}
-function onMapCityClick({ cityId }) {
-  cityStore.selectCity(cityId)
-}
-function onRankCityClick(cityId) {
-  router.push(`/city/${cityId}`)
-}
+
+function onCityChange(cityId) { cityStore.selectCity(cityId) }
+function onMapCityClick({ cityId }) { cityStore.selectCity(cityId) }
+function onRankCityClick(cityId) { router.push(`/city/${cityId}`) }
+
 function toggleRankOrder() {
   rankOrder.value = rankOrder.value === 'desc' ? 'asc' : 'desc'
   aqStore.fetchRanking(rankOrder.value, 10)
 }
-function algorithmText(value) {
-  return ({ moving_average: '移动平均', weighted_moving_average: '加权移动平均', linear_regression: '线性回归', holt_winters: 'Holt-Winters', arima: 'ARIMA', lstm: 'LSTM' }[value] || value)
-}
-function diffText(dbValue, realValue) {
-  if (dbValue == null || realValue == null) return '--'
-  return (Number(dbValue) - Number(realValue)).toFixed(1)
-}
+
 function aqiColor(aqi) {
-  if (!aqi) return '#8a8a8a'
-  if (aqi <= 50) return '#2d6a4f'
-  if (aqi <= 100) return '#d4a373'
-  if (aqi <= 150) return '#e07a5f'
-  if (aqi <= 200) return '#c1121f'
-  return '#780116'
-}
-function aqiTagType(aqi) {
-  if (aqi <= 50) return 'success'
-  if (aqi <= 100) return 'warning'
-  if (aqi <= 200) return 'danger'
-  return 'danger'
-}
-function riskLevelText(level) {
-  return ({ low: '低风险', medium: '中风险', high: '高风险', severe: '极高风险' }[level] || level)
-}
-function riskTagType(level) {
-  return ({ low: 'success', medium: 'warning', high: 'danger', severe: 'danger' }[level] || 'info')
+  if (aqi == null) return '#8a8a8a'
+  if (aqi <= 50) return '#32d296'
+  if (aqi <= 100) return '#f0b65a'
+  if (aqi <= 150) return '#ff9e64'
+  if (aqi <= 200) return '#ff6b81'
+  return '#cf3c6d'
 }
 
-watch(() => cityStore.currentCityId, (newId) => {
-  if (newId) loadCityData(newId)
+function aqiTagType(aqi) {
+  if (aqi <= 50) return 'success'
+  if (aqi <= 100) return ''
+  if (aqi <= 200) return 'warning'
+  return 'danger'
+}
+
+function weatherIcon(condition) {
+  const map = {
+    '晴': 'meteocons:clear-day-fill',
+    '多云': 'meteocons:partly-cloudy-day-fill',
+    '阴': 'meteocons:overcast-fill',
+    '小雨': 'meteocons:drizzle-fill',
+    '中雨': 'meteocons:rain-fill',
+    '大雨': 'meteocons:rain-fill',
+    '暴雨': 'meteocons:thunderstorms-rain-fill',
+    '小雪': 'meteocons:snow-fill',
+    '中雪': 'meteocons:snow-fill',
+    '雨夹雪': 'meteocons:sleet-fill',
+  }
+  return map[condition] || 'meteocons:partly-cloudy-day-fill'
+}
+
+watch(() => cityStore.currentCityId, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    loadCityData(newId)
+  }
+  if (!newId) {
+    cityRequestToken.value += 1
+    resetCityDependentData()
+  }
 })
 
 onMounted(async () => {
-  await cityStore.fetchCities()
-  await Promise.all([aqStore.fetchLatest(), aqStore.fetchMapData(), aqStore.fetchRanking('desc', 10)])
-  if (cityStore.cities.length > 0 && !cityStore.currentCityId) cityStore.selectCity(cityStore.cities[0].id)
-  if (cityStore.currentCityId) loadCityData(cityStore.currentCityId)
+  await ensureInitialData()
 })
 </script>
 
 <style scoped>
 .dashboard {
-  padding-bottom: 28px;
+  min-height: 100vh;
+  background: transparent;
+  transition: background-color 0.4s var(--bounce);
 }
 
-.hero-band {
+.page-shell {
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.panel-surface {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(180deg, rgba(10, 22, 37, 0.86), rgba(8, 18, 31, 0.72));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.panel-surface::before,
+.panel-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(127, 246, 234, 0.08), transparent 30%, transparent 70%, rgba(110, 168, 255, 0.08));
+  pointer-events: none;
+}
+
+.hero-section {
   display: grid;
-  grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 16px;
+  padding: 18px 24px 10px;
 }
 
-.hero-main-card {
+.hero-copy {
+  border-radius: 28px;
   padding: 28px;
-  background:
-    linear-gradient(135deg, rgba(255, 252, 247, 0.82), rgba(251, 247, 239, 0.72)),
-    radial-gradient(circle at top right, rgba(168, 116, 63, 0.08), transparent 36%) !important;
 }
 
-.hero-card-top,
-.card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.card-header--stacked p,
-.card-header p,
-.hero-footnote p,
-.analysis-note-item p {
-  margin-top: 4px;
-}
-
-.hero-label,
-.metric-kicker,
-.footnote-label {
-  font-family: var(--aq-mono);
+.hero-eyebrow,
+.panel-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary-light);
+}
+
+.hero-eyebrow::before,
+.panel-kicker::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.75;
+}
+
+.hero-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.hero-title {
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.hero-subtitle {
+  margin-top: 14px;
+  max-width: 720px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.hero-city-chip {
+  align-self: flex-start;
+  min-width: 144px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: rgba(7, 18, 31, 0.72);
+}
+
+.hero-chip-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
-.hero-label,
-.metric-kicker {
-  color: var(--aq-muted);
+.hero-chip-value {
+  display: block;
+  margin-top: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-.hero-panel-tag {
+.hero-status-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 12px;
+}
+
+.kpi-card {
+  position: relative;
+  min-height: 100%;
+}
+
+.kpi-hero {
+  padding: 26px 24px;
+  border-radius: 28px;
+}
+
+.hero-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.kpi-trend {
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid var(--aq-line-strong);
-  color: var(--aq-accent);
-  font-family: var(--aq-mono);
+  background: rgba(39, 211, 195, 0.12);
+  color: var(--primary-light);
   font-size: 11px;
-  letter-spacing: 0.12em;
 }
 
-.hero-city-line {
+.kpi-value {
+  font-size: clamp(52px, 6vw, 70px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.kpi-level {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.kpi-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpi-side {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.kpi-small {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.kpi-value-sm {
+  margin-top: 20px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.weather-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 0 24px 10px;
+  padding: 16px 22px;
+  border-radius: 24px;
+  flex-wrap: wrap;
+}
+
+.weather-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 10px;
 }
 
-.hero-city-line strong {
-  font-family: var(--aq-display);
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--aq-ink);
+.weather-item div {
+  display: flex;
+  flex-direction: column;
 }
 
-.hero-aqi-block {
+.weather-main {
+  gap: 12px;
+}
+
+.weather-icon-wrap {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 20px;
-  align-items: end;
-  margin: 22px 0 16px;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: rgba(39, 211, 195, 0.08);
+  color: var(--primary-light);
 }
 
-.hero-aqi-value {
-  font-size: 92px;
-  line-height: 0.95;
+.weather-cond {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.weather-temp {
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  color: var(--primary-light);
+  font-family: var(--font-mono);
 }
 
-.hero-aqi-copy {
-  display: grid;
-  gap: 8px;
-  padding-bottom: 10px;
+.weather-label {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
-.hero-aqi-copy p,
-.analysis-note-item b,
-.realtime-city {
+.weather-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.weather-divider {
+  width: 1px;
+  height: 34px;
+  background: var(--border-color);
+}
+
+.realtime-tag {
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(39, 211, 195, 0.18);
+  background: rgba(39, 211, 195, 0.08);
+}
+
+.forecast-strip {
+  margin: 0 24px 10px;
+  padding: 18px 20px;
+  border-radius: 24px;
+}
+
+.strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.strip-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.forecast-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.fc-item {
+  flex: 1;
+  min-width: 88px;
+  padding: 14px 12px;
+  text-align: center;
+  border-radius: 18px;
+  background: rgba(7, 18, 31, 0.6);
+  border: 1px solid rgba(124, 154, 188, 0.14);
+}
+
+.fc-day {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.fc-icon {
+  margin: 8px 0 6px;
+  color: var(--primary-light);
+}
+
+.fc-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.fc-temp {
+  margin-top: 8px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--aq-ink);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
 }
 
-.hero-aqi-copy span,
-.hero-footnote p,
-.card-header p,
-.analysis-note-item span,
-.analysis-note-item p,
-.realtime-source,
-.empty-tip {
-  color: var(--aq-ink-soft);
-}
-
-.hero-divider {
-  height: 1px;
-  background: linear-gradient(90deg, rgba(168, 116, 63, 0.35), rgba(168, 116, 63, 0));
-  margin: 16px 0 14px;
-}
-
-.hero-footnote {
-  display: grid;
-  gap: 8px;
-}
-
-.footnote-label {
-  color: var(--aq-accent);
-}
-
-.hero-side-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.hero-metric-card,
-.analysis-card,
-.side-panel,
-.support-card {
-  background: rgba(255, 252, 247, 0.76) !important;
-}
-
-.hero-metric-card {
-  display: grid;
-  gap: 12px;
-  align-content: end;
-  min-height: 148px;
-}
-
-.hero-metric-card b {
-  font-family: var(--aq-display);
-  font-size: 34px;
-  color: var(--aq-ink);
-}
-
-.hero-metric-card small {
-  color: var(--aq-ink-soft);
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.92fr);
+.realtime-aqi-bar {
+  display: flex;
+  align-items: center;
   gap: 18px;
+  margin: 10px 24px;
+  padding: 14px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(39, 211, 195, 0.24);
+  background: linear-gradient(135deg, rgba(39, 211, 195, 0.1), rgba(110, 168, 255, 0.08));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  flex-wrap: wrap;
 }
 
+.ra-badge {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #03111d;
+  font-size: 11px;
+  font-weight: 800;
+}
 
-.side-column,
-.list-stack,
-.support-section {
+.ra-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+}
+
+.ra-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ra-val {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ra-source {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.main-grid {
   display: grid;
+  grid-template-columns: 1.7fr 1fr;
   gap: 14px;
+  padding: 12px 24px 24px;
 }
 
-.map-column{
-  gap: 14px;
-}
-
-.map-panel {
-  min-height: 560px;
-}
-
-.map-card {
-  background:
-    linear-gradient(180deg, rgba(19, 28, 33, 0.96), rgba(14, 21, 25, 0.98)),
-    radial-gradient(circle at top, rgba(126, 181, 175, 0.14), transparent 38%) !important;
+.panel-frame {
+  position: relative;
   overflow: hidden;
 }
 
-.map-card :deep(.el-card__header) {
-  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
-  color: #eff4f2 !important;
+.panel-headline,
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.map-card :deep(.el-card__header p) {
-  color: rgba(239, 244, 242, 0.68) !important;
+.panel-headline h3,
+.card-header h3 {
+  margin-top: 6px;
+  font-size: 20px;
+  color: var(--text-primary);
 }
 
-.rank-row,
-.risk-row,
-.driver-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px;
+.panel-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.map-card {
+  background: linear-gradient(180deg, rgba(7, 17, 31, 0.96), rgba(7, 16, 28, 0.92)) !important;
+  border: 1px solid rgba(39, 211, 195, 0.18) !important;
+}
+
+.map-card::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 120px;
+  background: linear-gradient(180deg, transparent, rgba(4, 9, 18, 0.52));
+  pointer-events: none;
+}
+
+.rank-card + .rank-card {
+  margin-top: 14px;
+}
+
+.rank-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.rank-item {
+  display: flex;
   align-items: center;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(30, 92, 90, 0.08);
-  background: linear-gradient(180deg, rgba(30, 92, 90, 0.07), rgba(168, 116, 63, 0.05));
-}
-
-.rank-row {
+  gap: 10px;
+  padding: 10px 0;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease;
+  border-bottom: 1px solid rgba(124, 154, 188, 0.12);
+  transition: background 0.3s var(--bounce), padding-left 0.3s var(--bounce);
 }
 
-.rank-row:hover {
-  transform: translateY(-1px);
-  border-color: rgba(168, 116, 63, 0.22);
+.rank-item:hover {
+  background: rgba(39, 211, 195, 0.06);
+  padding-left: 6px;
 }
 
 .rank-num {
   width: 28px;
-  text-align: center;
-  font-family: var(--aq-mono);
+  height: 28px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--aq-accent);
+  background: rgba(124, 154, 188, 0.16);
+  color: var(--text-secondary);
 }
 
-.rank-name,
-.risk-row span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.rank-1 {
+  background: rgba(255, 107, 129, 0.2);
+  color: #ffd7de;
 }
 
-.analysis-cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+.rank-2 {
+  background: rgba(240, 182, 90, 0.2);
+  color: #ffe7bd;
 }
 
-.analysis-note-grid {
-  display: grid;
-  gap: 12px;
+.rank-3 {
+  background: rgba(39, 211, 195, 0.2);
+  color: #d8fffb;
 }
 
-.analysis-note-item {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.46);
-  border: 1px solid rgba(26, 37, 41, 0.06);
+.rank-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
-.realtime-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
+.anomaly-list {
+  padding-right: 4px;
 }
 
-.realtime-main {
-  display: grid;
-  gap: 2px;
-}
-
-.realtime-weather {
+.anomaly-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  color: var(--aq-ink-soft);
-}
-
-.realtime-pill-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.realtime-pill {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 9px 11px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(30, 92, 90, 0.08), rgba(168, 116, 63, 0.05));
+  padding: 8px 0;
   font-size: 12px;
 }
 
-.realtime-pill span {
-  color: var(--aq-ink-soft);
+.anomaly-text {
+  flex: 1;
+  color: var(--text-primary);
 }
 
-.realtime-pill b {
-  color: var(--aq-primary);
+.anomaly-date {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
-@media (max-width: 1280px) {
-  .hero-band,
-  .dashboard-grid,
-  .analysis-cards {
+.empty-tip {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 20px;
+}
+
+@media (max-width: 1180px) {
+  .hero-section,
+  .main-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-side {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 900px) {
-  .hero-side-grid {
+@media (max-width: 768px) {
+  .hero-section,
+  .main-grid {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .weather-bar,
+  .forecast-strip,
+  .realtime-aqi-bar {
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+
+  .hero-copy {
+    padding: 22px 18px;
+  }
+
+  .hero-title-row,
+  .strip-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kpi-side {
     grid-template-columns: 1fr;
   }
 
-  .hero-aqi-block {
-    grid-template-columns: 1fr;
-    align-items: start;
+  .weather-divider {
+    display: none;
+  }
+
+  .ra-source {
+    margin-left: 0;
   }
 }
 </style>

@@ -60,7 +60,7 @@
             </div>
           </template>
           <TrendLine
-            :trend-data="aqStore.trendWithPrediction"
+            :trend-data="trimmedTrend"
             :title="`${selectedCityName} ${metricLabel} 走势`"
             :metric="metricLabel"
             :algorithm-label="`${algorithmLabel}预测`"
@@ -267,6 +267,32 @@ const metricLabel = computed(() => ({ aqi: 'AQI', pm25: 'PM2.5', pm10: 'PM10', o
 const algorithmLabel = computed(() => algorithmText(selectedAlgorithm.value))
 const anomalyMethodLabel = computed(() => anomalyMethodText(selectedAnomalyMethod.value))
 const referenceLabel = computed(() => aqStore.predictionMeta?.referenceLabel || '参考线')
+
+// 截断趋势图历史部分，只显示近 days 天 + 预测
+const trimmedTrend = computed(() => {
+  const full = aqStore.trendWithPrediction
+  if (!full || !full.dates || full.dates.length === 0) return full
+  // 找到历史与预测的分界点（第一个 predicted 非 null 的位置）
+  let splitIdx = full.predicted.findIndex((v) => v != null)
+  if (splitIdx < 0) splitIdx = full.dates.length
+  // 历史部分只取最后 days 天
+  const historyStart = Math.max(0, splitIdx - days.value)
+  const trimmedDates = [...full.dates.slice(historyStart, splitIdx), ...full.dates.slice(splitIdx)]
+  const trimmedActual = [...full.actual.slice(historyStart, splitIdx), ...full.actual.slice(splitIdx)]
+  const trimmedRef = full.reference ? [...full.reference.slice(historyStart, splitIdx), ...full.reference.slice(splitIdx)] : undefined
+  const trimmedPredicted = [...full.predicted.slice(historyStart, splitIdx), ...full.predicted.slice(splitIdx)]
+  const trimmedUpper = [...full.upper.slice(historyStart, splitIdx), ...full.upper.slice(splitIdx)]
+  const trimmedLower = [...full.lower.slice(historyStart, splitIdx), ...full.lower.slice(splitIdx)]
+  return {
+    dates: trimmedDates,
+    actual: trimmedActual,
+    reference: trimmedRef,
+    predicted: trimmedPredicted,
+    upper: trimmedUpper,
+    lower: trimmedLower,
+  }
+})
+
 const bestAlgorithmLabel = computed(() => algorithmText(aqStore.predictionMeta?.bestAlgorithm || aqStore.predictionMeta?.selectedAlgorithm || selectedAlgorithm.value))
 const predictionRangeText = computed(() => {
   const meta = aqStore.predictionMeta
@@ -385,7 +411,7 @@ async function loadData() {
   await Promise.allSettled([
     aqStore.fetchRealtimeLatest(cityId),
     aqStore.fetchPrediction(cityId, selectedMetric.value, 7, 5, selectedAlgorithm.value, true),
-    aqStore.fetchAnomalyDetect(cityId, selectedMetric.value, 90, selectedAnomalyMethod.value, true),
+    aqStore.fetchAnomalyDetect(cityId, selectedMetric.value, days.value, selectedAnomalyMethod.value, true),
     aqStore.fetchRiskAssess(cityId, 5),
     realAqiApi.getHistory(cityId, days.value).then(d => { realHistory.value = d.history || realHistory.value }).catch(() => realHistory.value),
     weatherApi.getHistory(cityId, days.value).then(d => { weatherHistory.value = d.history || weatherHistory.value }).catch(() => weatherHistory.value),
@@ -491,4 +517,8 @@ onMounted(async () => {
 .risk-basis { margin-top: 12px; display: grid; gap: 8px; }
 .basis-title { font-size: 13px; font-weight: 700; }
 .basis-item { font-size: 12px; line-height: 1.6; color: var(--text-secondary); }
+:deep(.el-alert){
+  background-color: #11111f;
+
+}
 </style>

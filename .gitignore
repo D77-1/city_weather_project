@@ -28,7 +28,6 @@ frontend/dist/
 # OS files
 .DS_Store
 Thumbs.db
-
 # Test files
 *.test.mjs
 *.test.js
@@ -37,7 +36,8 @@ Thumbs.db
 frontend/tests/
 frontend/vitest.config.js
 docs/superpowers/
-
+plan/
+references/
 # AI agent configs
 AGENTS.md
 GEMINI.md

@@ -166,20 +166,20 @@ const trendOption = computed(() => {
   const allDates = compareData.value[0]?.history?.map(h => h.date) || []
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: compareData.value.map(c => c.cityName), top: 8, textStyle: { color: '#4a5a61' } },
+    legend: { data: compareData.value.map(c => c.cityName), top: 8, textStyle: { color: '#b7c8dc' } },
     grid: { left: 50, right: 20, top: 56, bottom: 50 },
     xAxis: {
       type: 'category',
       data: allDates,
       boundaryGap: false,
-      axisLine: { lineStyle: { color: 'rgba(26,37,41,0.18)' } },
-      axisLabel: { rotate: 40, fontSize: 10, formatter: v => v.slice(5), color: '#7a878b' },
+      axisLine: { lineStyle: { color: 'rgba(124,154,188,0.18)' } },
+      axisLabel: { rotate: 40, fontSize: 10, formatter: v => v.slice(5), color: '#9bb0c8' },
     },
     yAxis: {
       type: 'value',
       name: 'AQI',
-      nameTextStyle: { color: '#7a878b' },
-      splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } },
+      nameTextStyle: { color: '#9bb0c8' },
+      splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } },
     },
     series: compareData.value.map((c, i) => ({
       name: c.cityName,
@@ -201,12 +201,12 @@ const radarOption = computed(() => {
     { name: 'CO', max: 8 }, { name: 'O₃', max: 250 },
   ]
   return {
-    legend: { data: compareData.value.map(c => c.cityName), bottom: 4, textStyle: { color: '#4a5a61' } },
+    legend: { data: compareData.value.map(c => c.cityName), bottom: 4, textStyle: { color: '#b7c8dc' } },
     radar: {
       indicator: indicators,
       shape: 'polygon',
-      splitArea: { areaStyle: { color: ['rgba(30,92,90,0.03)', 'rgba(168,116,63,0.03)'] } },
-      axisName: { color: '#4a5a61' },
+      splitArea: { areaStyle: { color: ['rgba(39,211,195,0.03)', 'rgba(110,168,255,0.03)'] } },
+      axisName: { color: '#9bb0c8' },
     },
     series: [{
       type: 'radar',
@@ -226,10 +226,10 @@ const barOption = computed(() => {
   const keys = ['pm25', 'pm10', 'so2', 'no2', 'o3']
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { data: compareData.value.map(c => c.cityName), bottom: 4, textStyle: { color: '#4a5a61' } },
+    legend: { data: compareData.value.map(c => c.cityName), bottom: 4, textStyle: { color: '#b7c8dc' } },
     grid: { left: 50, right: 20, top: 24, bottom: 54 },
-    xAxis: { type: 'category', data: metrics, axisLabel: { color: '#7a878b' } },
-    yAxis: { type: 'value', name: 'μg/m³', nameTextStyle: { color: '#7a878b' }, splitLine: { lineStyle: { color: 'rgba(26,37,41,0.08)' } } },
+    xAxis: { type: 'category', data: metrics, axisLabel: { color: '#9bb0c8' } },
+    yAxis: { type: 'value', name: 'μg/m³', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
     series: compareData.value.map((c, i) => ({
       name: c.cityName,
       type: 'bar',
@@ -258,7 +258,7 @@ const tableData = computed(() => {
     compareData.value.forEach(c => {
       const v = c[m.key] || 0
       row[`val_${c.cityId}`] = v
-      row[`color_${c.cityId}`] = v === best ? '#2d6a4f' : v === worst ? '#8d3d32' : ''
+      row[`color_${c.cityId}`] = v === best ? '#32d296' : v === worst ? '#ff6b81' : ''
     })
     return row
   })
@@ -297,12 +297,7 @@ onMounted(() => { if (cityStore.cities.length === 0) cityStore.fetchCities() })
   padding-bottom: 28px;
 }
 
-.compare-intro-card,
-.report-card,
-.city-card,
-.empty-card {
-  background: rgba(255, 252, 247, 0.78) !important;
-}
+/* 卡片使用全局暗色主题，不再单独覆盖 */
 
 .compare-toolbar,
 .card-header {
@@ -411,7 +406,7 @@ onMounted(() => { if (cityStore.cities.length === 0) cityStore.fetchCities() })
 }
 
 .table-card :deep(.el-table) {
-  --el-table-header-bg-color: rgba(168, 116, 63, 0.06);
+  --el-table-header-bg-color: rgba(39, 211, 195, 0.06);
 }
 
 .empty-card {
