@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="sn_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e6f0fc"/>
+      <stop offset="100%" stop-color="#97b2d1"/>
+    </linearGradient>
+  </defs>
+  <path d="M 16 36 Q 9 36 9 29 Q 9 22 17 21 Q 19 13 28 13 Q 38 13 40 20 Q 47 20 48 28 Q 54 28 54 35 Q 54 42 48 42 L 18 42 Q 16 42 16 36 Z"
+        fill="url(#sn_cloud)" stroke="#5d7694" stroke-width="1.3" stroke-linejoin="round"/>
+  <g stroke="#eaf4ff" stroke-width="1.8" stroke-linecap="round">
+    <g transform="translate(22 52)">
+      <line x1="-6" y1="0" x2="6" y2="0"/>
+      <line x1="-4" y1="-4" x2="4" y2="4"/>
+      <line x1="-4" y1="4" x2="4" y2="-4"/>
+    </g>
+    <g transform="translate(42 55)">
+      <line x1="-5" y1="0" x2="5" y2="0"/>
+      <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5"/>
+      <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5"/>
+    </g>
+  </g>
+</svg>

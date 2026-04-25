@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="hs_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#dae7f6"/>
+      <stop offset="100%" stop-color="#7f9abc"/>
+    </linearGradient>
+  </defs>
+  <path d="M 14 34 Q 7 34 7 27 Q 7 19 16 18 Q 18 10 28 10 Q 39 10 41 18 Q 48 18 50 26 Q 56 26 56 33 Q 56 40 49 40 L 16 40 Q 14 40 14 34 Z"
+        fill="url(#hs_cloud)" stroke="#4d6788" stroke-width="1.4" stroke-linejoin="round"/>
+  <g stroke="#eaf4ff" stroke-width="1.8" stroke-linecap="round">
+    <g transform="translate(18 48)">
+      <line x1="-4" y1="0" x2="4" y2="0"/>
+      <line x1="-3" y1="-3" x2="3" y2="3"/>
+      <line x1="-3" y1="3" x2="3" y2="-3"/>
+    </g>
+    <g transform="translate(32 54)">
+      <line x1="-5" y1="0" x2="5" y2="0"/>
+      <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5"/>
+      <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5"/>
+    </g>
+    <g transform="translate(46 48)">
+      <line x1="-4" y1="0" x2="4" y2="0"/>
+      <line x1="-3" y1="-3" x2="3" y2="3"/>
+      <line x1="-3" y1="3" x2="3" y2="-3"/>
+    </g>
+    <g transform="translate(24 58)">
+      <line x1="-3" y1="0" x2="3" y2="0"/>
+      <line x1="-2.2" y1="-2.2" x2="2.2" y2="2.2"/>
+      <line x1="-2.2" y1="2.2" x2="2.2" y2="-2.2"/>
+    </g>
+    <g transform="translate(42 58)">
+      <line x1="-3" y1="0" x2="3" y2="0"/>
+      <line x1="-2.2" y1="-2.2" x2="2.2" y2="2.2"/>
+      <line x1="-2.2" y1="2.2" x2="2.2" y2="-2.2"/>
+    </g>
+  </g>
+</svg>

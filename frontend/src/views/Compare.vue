@@ -42,7 +42,7 @@
             <div class="cc-aqi" :style="{ color: aqiColor(c.aqi) }">{{ c.aqi }}</div>
             <div class="cc-label">空气质量指数 AQI</div>
             <div class="cc-weather" v-if="c.weather">
-              <span><Icon :icon="weatherIcon(c.weather.weatherText)" width="16" /> {{ c.weather.weatherText }}</span>
+              <span><img :src="weatherIcon(c.weather.weatherText)" width="18" height="18" alt="" class="cc-weather-svg" /> {{ c.weather.weatherText }}</span>
               <span>{{ c.weather.temperature }}℃</span>
               <span><Icon icon="mdi:water-outline" width="14" /> {{ c.weather.humidity }}%</span>
             </div>
@@ -273,20 +273,65 @@ function aqiColor(aqi) {
   return '#780116'
 }
 
+import clearSvg from '@/assets/weather/clear.svg'
+import partlyCloudySvg from '@/assets/weather/partly-cloudy.svg'
+import overcastSvg from '@/assets/weather/overcast.svg'
+import fogSvg from '@/assets/weather/fog.svg'
+import hazeSvg from '@/assets/weather/haze.svg'
+import dustSvg from '@/assets/weather/dust.svg'
+import drizzleSvg from '@/assets/weather/drizzle.svg'
+import rainSvg from '@/assets/weather/rain.svg'
+import heavyRainSvg from '@/assets/weather/heavy-rain.svg'
+import thunderstormSvg from '@/assets/weather/thunderstorm.svg'
+import snowSvg from '@/assets/weather/snow.svg'
+import heavySnowSvg from '@/assets/weather/heavy-snow.svg'
+import sleetSvg from '@/assets/weather/sleet.svg'
+
 function weatherIcon(condition) {
+  if (!condition) return overcastSvg
+  const key = String(condition).trim()
   const map = {
-    '晴': 'meteocons:clear-day-fill',
-    '多云': 'meteocons:partly-cloudy-day-fill',
-    '阴': 'meteocons:overcast-fill',
-    '小雨': 'meteocons:drizzle-fill',
-    '中雨': 'meteocons:rain-fill',
-    '大雨': 'meteocons:rain-fill',
-    '暴雨': 'meteocons:thunderstorms-rain-fill',
-    '小雪': 'meteocons:snow-fill',
-    '中雪': 'meteocons:snow-fill',
-    '雨夹雪': 'meteocons:sleet-fill',
+    '晴': clearSvg,
+    '晴间多云': partlyCloudySvg,
+    '多云': partlyCloudySvg,
+    '阴': overcastSvg,
+    '雾': fogSvg,
+    '薄雾': fogSvg,
+    '霾': hazeSvg,
+    '浮尘': dustSvg,
+    '扬沙': dustSvg,
+    '沙尘暴': dustSvg,
+    '阵雨': rainSvg,
+    '雷阵雨': thunderstormSvg,
+    '毛毛雨': drizzleSvg,
+    '小雨': drizzleSvg,
+    '中雨': rainSvg,
+    '大雨': heavyRainSvg,
+    '暴雨': thunderstormSvg,
+    '大暴雨': thunderstormSvg,
+    '特大暴雨': thunderstormSvg,
+    '冻雨': sleetSvg,
+    '小雪': snowSvg,
+    '中雪': snowSvg,
+    '大雪': heavySnowSvg,
+    '暴雪': heavySnowSvg,
+    '阵雪': snowSvg,
+    '雨夹雪': sleetSvg,
   }
-  return map[condition] || 'meteocons:partly-cloudy-day-fill'
+  if (map[key]) return map[key]
+  if (key.includes('雷')) return thunderstormSvg
+  if (key.includes('暴雨')) return thunderstormSvg
+  if (key.includes('大雨')) return heavyRainSvg
+  if (key.includes('雨夹雪')) return sleetSvg
+  if (key.includes('大雪') || key.includes('暴雪')) return heavySnowSvg
+  if (key.includes('雪')) return snowSvg
+  if (key.includes('雨')) return rainSvg
+  if (key.includes('雾')) return fogSvg
+  if (key.includes('霾')) return hazeSvg
+  if (key.includes('尘') || key.includes('沙')) return dustSvg
+  if (key.includes('多云') || key.includes('晴')) return partlyCloudySvg
+  if (key.includes('阴')) return overcastSvg
+  return overcastSvg
 }
 
 onMounted(() => { if (cityStore.cities.length === 0) cityStore.fetchCities() })

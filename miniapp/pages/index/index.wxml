@@ -1,7 +1,6 @@
 <view class="page-head">
   <view class="page-kicker">AIR QUALITY RESEARCH</view>
   <view class="page-title">城市空气态势总览</view>
-  <view class="page-subtitle">用于答辩展示当前城市状态、趋势与排名结果</view>
 </view>
 
 <view class="aqi-hero" style="background: {{levelInfo.bg}}">

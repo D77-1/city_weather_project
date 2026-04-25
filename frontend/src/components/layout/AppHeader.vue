@@ -2,10 +2,10 @@
   <el-header class="app-header">
     <div class="header-layer"></div>
     <div class="header-left" @click="$router.push('/')">
-      <div class="brand-mark">
+      <!-- <div class="brand-mark">
         <span class="brand-dot"></span>
         <span class="brand-dot brand-dot-alt"></span>
-      </div>
+      </div> -->
       <div class="brand-copy">
         <span class="brand-kicker">Air Research Console</span>
         <h1 class="title">城市空气质量可视化系统</h1>
@@ -43,15 +43,53 @@
         <el-button text size="small" class="nav-link" @click="$router.push('/report')">数据报告</el-button>
         <el-button text size="small" class="nav-link" @click="$router.push('/anomaly')">异常管理</el-button>
       </div>
+
+      <el-dropdown
+        v-if="userStore.isLoggedIn"
+        trigger="click"
+        placement="bottom-end"
+        @command="onUserCommand"
+      >
+        <div class="user-chip" title="账号菜单">
+          <span class="user-avatar">{{ avatarLetter }}</span>
+          <div class="user-meta">
+            <span class="user-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</span>
+            <span class="user-role" :class="{ 'role-admin': userStore.isAdmin }">
+              {{ userStore.isAdmin ? 'ADMIN' : 'USER' }}
+            </span>
+          </div>
+        </div>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item v-if="userStore.isAdmin" command="admin">
+              <el-icon><Setting /></el-icon>进入管理后台
+            </el-dropdown-item>
+            <el-dropdown-item command="logout" divided>
+              <el-icon><SwitchButton /></el-icon>退出登录
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+
+      <router-link v-else to="/login" class="user-login-link" title="登录管理员">
+        <el-icon><User /></el-icon>
+        <span>登录</span>
+      </router-link>
     </div>
   </el-header>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { Setting, SwitchButton, User } from '@element-plus/icons-vue'
 import { useCityStore } from '@/stores/city'
+import { useUserStore } from '@/stores/user'
 
 const cityStore = useCityStore()
+const userStore = useUserStore()
+const router = useRouter()
 const emit = defineEmits(['cityChange'])
 
 const currentDate = computed(() => {
@@ -59,8 +97,25 @@ const currentDate = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
+const avatarLetter = computed(() => {
+  const name = userStore.userInfo?.nickname || userStore.userInfo?.username || ''
+  return name.slice(0, 1).toUpperCase() || 'A'
+})
+
 function onCityChange(val) {
   emit('cityChange', val)
+}
+
+function onUserCommand(cmd) {
+  if (cmd === 'admin') {
+    router.push('/admin')
+  } else if (cmd === 'logout') {
+    userStore.logout()
+    ElMessage.success('已退出登录')
+    if (router.currentRoute.value.path.startsWith('/admin')) {
+      router.push('/')
+    }
+  }
 }
 </script>
 
@@ -169,7 +224,7 @@ function onCityChange(val) {
 
 .city-control {
   width: min(100%, 280px);
-  padding: 10px 14px;
+  padding: 5px 14px;
   border: 1px solid var(--border-color);
   border-radius: 18px;
   background: rgba(8, 20, 34, 0.7);
@@ -229,7 +284,7 @@ function onCityChange(val) {
   border-radius: 16px;
   border: 1px solid var(--border-color);
   background: rgba(8, 20, 34, 0.72);
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
   justify-content: flex-end;
 }
 
@@ -244,6 +299,83 @@ function onCityChange(val) {
 .nav-link:hover {
   color: var(--text-primary) !important;
   background: rgba(39, 211, 195, 0.12) !important;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(8, 20, 34, 0.7);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.user-chip:hover {
+  border-color: rgba(39, 211, 195, 0.45);
+  background: rgba(10, 26, 42, 0.82);
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #27d3c3, #6ea8ff);
+  color: #041019;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.user-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+
+.user-role.role-admin {
+  color: var(--primary);
+}
+
+.user-login-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(8, 20, 34, 0.7);
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-decoration: none;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+
+.user-login-link:hover {
+  color: var(--text-primary);
+  border-color: rgba(39, 211, 195, 0.45);
+  background: rgba(10, 26, 42, 0.82);
 }
 
 @media (max-width: 1200px) {

@@ -9,10 +9,17 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 // 固定暗色模式，始终添加 dark 类
 onMounted(() => {
   document.documentElement.classList.add('dark')
+  // 若本地已有 token，尝试恢复登录态（用于刷新页面保持登录）
+  if (userStore.token && !userStore.userInfo) {
+    userStore.fetchMe()
+  }
 })
 </script>
 

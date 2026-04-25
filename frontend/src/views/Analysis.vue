@@ -81,10 +81,10 @@
             <div class="risk-level">{{ riskLevelText(aqStore.riskResult.level) }}</div>
             <div class="risk-summary">{{ aqStore.riskResult.summary }}</div>
             <div class="risk-components">
-              <div class="risk-component"><span>污染暴露</span><b>{{ aqStore.riskResult.components?.pollution ?? '--' }}</b></div>
-              <div class="risk-component"><span>扩散条件</span><b>{{ aqStore.riskResult.components?.diffusion ?? '--' }}</b></div>
+              <div class="risk-component"><span>AQI 暴露</span><b>{{ aqStore.riskResult.components?.exposure ?? '--' }}</b></div>
+              <div class="risk-component"><span>气象修正</span><b>{{ aqStore.riskResult.components?.meteo ?? '--' }}</b></div>
               <div class="risk-component"><span>异常波动</span><b>{{ aqStore.riskResult.components?.anomaly ?? '--' }}</b></div>
-              <div class="risk-component"><span>未来趋势</span><b>{{ aqStore.riskResult.components?.forecast ?? '--' }}</b></div>
+              <div class="risk-component"><span>未来趋势</span><b>{{ aqStore.riskResult.components?.trend ?? '--' }}</b></div>
             </div>
           </div>
           <el-empty v-else description="暂无风险数据" :image-size="60" />

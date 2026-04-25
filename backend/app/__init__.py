@@ -23,6 +23,23 @@ def create_app():
         from app import models  # noqa: F401 - 确保所有模型被导入
         db.create_all()
 
+        # 首次启动自动创建默认管理员 admin / admin123
+        try:
+            from app.models import User
+            from app.utils.auth import hash_password
+            if not User.query.filter_by(role='admin').first():
+                admin = User(
+                    username='admin',
+                    password_hash=hash_password('admin123'),
+                    nickname='系统管理员',
+                    role='admin',
+                )
+                db.session.add(admin)
+                db.session.commit()
+                print('[Init] 已创建默认管理员 admin / admin123')
+        except Exception as e:
+            print(f'[Init] 管理员初始化跳过: {e}')
+
         # 启动时自动补充最新空气质量数据（Open-Meteo 真实 API）
         try:
             from app.services.aqi_service import refresh_realtime
