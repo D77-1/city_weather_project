@@ -148,7 +148,7 @@ def _generate_ai_attribution(event):
         f"1. 可能成因：结合污染物化学特性、当日气象、典型排放源，给出 2~3 条具体推测\n"
         f"2. 健康影响：针对该污染物与异常幅度，说明易感人群的短期风险\n"
         f"3. 处置建议：给出 2 条可操作的公众防护或监管动作\n"
-        f"全文不超过 220 字。"
+        f"全文不超过 250 字。"
     )
     result = chat_with_qwen(prompt)
     return result.get('content', '')
