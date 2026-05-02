@@ -129,6 +129,18 @@ def _future_dates(last_date, forecast_days):
 
 
 
+def _shared_test_size(df_len, forecast_days=7):
+    """统一回测窗口：保证 6 种算法在同一份历史序列上使用相同长度的测试集。
+
+    取 max(forecast_days*2, 14) 作为下限，上限不超过 len // 4，最小 1。
+    14 让回测覆盖两个完整 forecast 周期，并与 ARIMA / LSTM 的最小训练样本要求兼容。
+    """
+    base = max(forecast_days * 2, 14)
+    cap = max(df_len // 4, 1)
+    return max(min(base, cap), 1)
+
+
+
 def evaluate_forecast(actual, predicted):
     actual_arr = np.asarray(actual, dtype=float)
     pred_arr = np.asarray(predicted, dtype=float)
@@ -209,9 +221,11 @@ def _empty_prediction_result(metric, requested_algorithm, forecast_days, window,
 
 
 
-def _fallback_result(df, metric, requested_algorithm, forecast_days, window, reason=None):
+def _fallback_result(df, metric, requested_algorithm, forecast_days, 
+                     window, reason=None):
     if df.empty:
-        result = _empty_prediction_result(metric, requested_algorithm, forecast_days, window, df, reason)
+        result = _empty_prediction_result(metric, requested_algorithm, 
+                                          forecast_days, window, df, reason)
         result['usedFallback'] = True
         result['selectedAlgorithm'] = 'moving_average'
         result['algorithmStatus'] = 'fallback'
@@ -272,7 +286,7 @@ def moving_average_predict(city_id, metric='aqi', window=7, forecast_days=7, pre
     rolling_ma = df['value'].rolling(window=window, min_periods=1).mean()
     rolling_std = df['value'].rolling(window=window, min_periods=1).std().fillna(0)
 
-    test_size = min(max(forecast_days, 5), max(len(df) // 4, 1))
+    test_size = _shared_test_size(len(df), forecast_days)
     if len(df) <= test_size:
         test_size = max(1, len(df) - 1)
     train_values = df['value'].iloc[:-test_size].tolist()
@@ -338,7 +352,7 @@ def weighted_moving_average_predict(city_id, metric='aqi', window=7, forecast_da
         local_weights /= local_weights.sum()
         ref_series.iloc[i] = float(np.dot(np.asarray(subset, dtype=float), local_weights))
 
-    test_size = min(max(forecast_days, 5), max(len(df) // 4, 1))
+    test_size = _shared_test_size(len(df), forecast_days)
     train_values = values_list[:-test_size] if len(values_list) > test_size else values_list[:-1]
     actual_test = values_list[-test_size:] if len(values_list) > test_size else values_list[-1:]
     if not train_values:
@@ -387,7 +401,7 @@ def linear_regression_predict(city_id, metric='aqi', window=7, forecast_days=7, 
     slope, intercept = np.polyfit(x, values, 1)
     fitted = intercept + slope * x
 
-    test_size = min(max(forecast_days, 5), max(len(df) // 4, 1))
+    test_size = _shared_test_size(len(df), forecast_days)
     train_x = x[:-test_size] if len(x) > test_size else x[:-1]
     train_y = values[:-test_size] if len(values) > test_size else values[:-1]
     test_x = x[-test_size:] if len(x) > test_size else x[-1:]
@@ -440,7 +454,7 @@ def holt_winters_predict(city_id, metric='aqi', window=7, forecast_days=7, prepa
         trend = beta * (level - prev_level) + (1 - beta) * trend
         fitted_values.append(level + trend)
 
-    test_size = min(max(forecast_days, 5), max(len(values) // 4, 1))
+    test_size = _shared_test_size(len(values), forecast_days)
     train_vals = values[:-test_size] if len(values) > test_size else values[:-1]
     test_vals = values[-test_size:] if len(values) > test_size else values[-1:]
     if len(train_vals) < 2:
@@ -490,30 +504,44 @@ def arima_predict(city_id, metric='aqi', window=7, forecast_days=7, prepared_df=
     except Exception:
         return _fallback_result(df, metric, 'arima', forecast_days, window, '未安装 statsmodels，已回退到移动平均')
 
-    test_size = min(max(forecast_days, 5), max(len(df) // 5, 1))
+    test_size = _shared_test_size(len(df), forecast_days)
     train = df['value'].iloc[:-test_size]
     test = df['value'].iloc[-test_size:]
     if len(train) < 10:
         return _fallback_result(df, metric, 'arima', forecast_days, window, 'ARIMA 训练样本不足')
 
-    best_model = None
+    candidate_orders = [
+        (1, 1, 1), (2, 1, 1), (1, 1, 2), (2, 1, 2),
+        (0, 1, 1), (1, 0, 1), (3, 1, 1), (1, 1, 3),
+        (2, 0, 2), (0, 1, 2),
+    ]
     best_order = None
     best_aic = None
-    for order in [(1, 1, 1), (2, 1, 1), (1, 1, 2), (2, 1, 2)]:
+    for order in candidate_orders:
         try:
             model = ARIMA(train, order=order).fit()
             if best_aic is None or model.aic < best_aic:
-                best_model = model
                 best_order = order
                 best_aic = model.aic
         except Exception:
             continue
 
-    if best_model is None:
+    if best_order is None:
         return _fallback_result(df, metric, 'arima', forecast_days, window, 'ARIMA 拟合失败，已回退到移动平均')
 
-    backtest_pred = best_model.forecast(steps=len(test))
-    evaluation = evaluate_forecast(test.values, backtest_pred.values)
+    # walk-forward backtest：每步用真实值滚动 refit，保持与 MA 类算法的公平
+    backtest_pred = []
+    history = list(train.values)
+    for actual in test.values:
+        try:
+            step_model = ARIMA(history, order=best_order).fit()
+            step_forecast = step_model.forecast(steps=1)
+            pred_value = float(step_forecast.iloc[0]) if hasattr(step_forecast, 'iloc') else float(step_forecast[0])
+        except Exception:
+            pred_value = float(np.mean(history[-7:])) if history else 0.0
+        backtest_pred.append(pred_value)
+        history.append(float(actual))
+    evaluation = evaluate_forecast(test.values, backtest_pred)
 
     final_model = ARIMA(df['value'], order=best_order).fit()
     forecast_res = final_model.get_forecast(steps=forecast_days)
@@ -551,14 +579,15 @@ def arima_predict(city_id, metric='aqi', window=7, forecast_days=7, prepared_df=
 def lstm_predict(city_id, metric='aqi', window=7, forecast_days=7, prepared_df=None):
     _validate_metric(metric, PREDICTION_METRICS)
     df = prepared_df.copy() if prepared_df is not None else _get_daily_series(city_id, metric, 240)
-    lookback = max(window, 7)
+    lookback = max(window * 2, 14)
     if len(df) < max(40, lookback * 4):
         return _fallback_result(df, metric, 'lstm', forecast_days, window, 'LSTM 所需历史数据不足')
 
     try:
         from tensorflow.keras import Sequential
-        from tensorflow.keras.layers import LSTM, Dense, Input
+        from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
         from tensorflow.keras.optimizers import Adam
+        from tensorflow.keras.callbacks import EarlyStopping
         import tensorflow as tf
     except Exception:
         return _fallback_result(df, metric, 'lstm', forecast_days, window, '未安装 TensorFlow，已回退到移动平均')
@@ -583,7 +612,9 @@ def lstm_predict(city_id, metric='aqi', window=7, forecast_days=7, prepared_df=N
     if len(x_all) < 12:
         return _fallback_result(df, metric, 'lstm', forecast_days, window, 'LSTM 序列样本不足')
 
-    split_idx = max(int(len(x_all) * 0.8), 1)
+    test_size = _shared_test_size(len(df), forecast_days)
+    test_size = min(test_size, max(len(x_all) - 8, 1))
+    split_idx = max(len(x_all) - test_size, 1)
     x_train, y_train = x_all[:split_idx], y_all[:split_idx]
     x_test, y_test = x_all[split_idx:], y_all[split_idx:]
     if len(x_test) == 0:
@@ -595,12 +626,19 @@ def lstm_predict(city_id, metric='aqi', window=7, forecast_days=7, prepared_df=N
 
     model = Sequential([
         Input(shape=(lookback, 1)),
-        LSTM(32),
+        LSTM(32, dropout=0.2, recurrent_dropout=0.1),
         Dense(16, activation='relu'),
+        Dropout(0.2),
         Dense(1),
     ])
-    model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
-    model.fit(x_train, y_train, epochs=25, batch_size=8, verbose=0)
+    model.compile(optimizer=Adam(learning_rate=0.005), loss='mse')
+    early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    val_split = 0.15 if len(x_train) >= 20 else 0.0
+    fit_kwargs = {'epochs': 100, 'batch_size': 8, 'verbose': 0}
+    if val_split > 0:
+        fit_kwargs['validation_split'] = val_split
+        fit_kwargs['callbacks'] = [early_stop]
+    model.fit(x_train, y_train, **fit_kwargs)
 
     test_pred = model.predict(x_test, verbose=0).reshape(-1)
     evaluation = evaluate_forecast(y_test * scale + min_val, test_pred * scale + min_val)

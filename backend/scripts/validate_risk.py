@@ -1,17 +1,26 @@
 """
 风险评分一致性验证脚本
 --------------------------------
-在数据库全部历史记录上，按 §3 公式计算简化版 R（暴露 + 气象 + 异常*），
-并把 R 的 4 级划分（low/medium/high/severe）与该天 AQI 按 HJ 633-2012
-六级分类（合并为 4 级）做交叉对比，输出一致率、混淆矩阵与权重敏感性。
+在数据库全部历史记录上，按 §4.3.3 综合风险评分公式计算一份**简化版** R 评分
+（exposure + meteo + 简化版 anomaly + 简化版 trend），并把 R 的 4 级划分
+（low/medium/high/severe）与该天 AQI 按 HJ 633-2012 六级分类（合并为 4 级）做
+交叉对比，输出一致率、混淆矩阵、权重/阈值敏感性以及 train/test split 验证。
 
 用法：
     D:/conda_envs/python3.12/python.exe backend/scripts/validate_risk.py
 
-*注：为了在 24k+ 条记录上跑得动，异常分与趋势分做了简化处理：
- - 异常分：该天的 AQI 是否在本城市 60 天窗口的 IQR 范围外
- - 趋势分：该天与前 5 天滚动平均的差值
-两项简化仅用于批量验证，不影响在线评分模块的精确算法。
+⚠ 重要：本脚本并非在线评分模块的精确复刻，为在 14 万+ 条记录上批量验证可行，
+对两个分项做了简化处理，**论文 6.3.1 实验设计应与此处口径完全一致**：
+ - 异常分（简化）：当条记录的 AQI 是否落在本城市全期 IQR ± 1.5 倍范围之外；
+   命中即给满分 R_ano（5 分），否则 0 分。在线模块按"近 60 天 IQR + MAD
+   命中数 × 0.5"计算。
+ - 趋势分（简化）：当条记录与本城市前 5 日滚动均值的差值占 500 的比例，
+   按 R_trend 上限截断。在线模块按"未来 5 天 Holt-Winters 预测峰值 / 500 ×
+   R_trend"计算（即基于前向预测，本脚本因批量回测改用历史滚动均值代替）。
+
+这两项简化只影响 R_anomaly 与 R_trend 这两个小分项（合计 15 / 100），
+不改变 R_exposure（70 / 100）与 HJ 633-2012 标签均为 AQI 单调函数这一结构事实，
+因此一致率分析的方向性结论可以迁移到在线模块。
 """
 import os
 import sys
@@ -147,6 +156,59 @@ def evaluate(df, weights=(70, 15, 5, 10), thresholds=(20, 35, 55)):
     return {'total': total, 'consistency': consistency, 'near': near, 'cm': cm}
 
 
+def evaluate_with_split(df, n_train_cities=24, seed=42, weights=(70, 15, 5, 10),
+                        candidate_thresholds=None):
+    """
+    按城市切分 train/test，回答老师 #124：网格搜索阈值是否过拟合到这批数据。
+
+    流程：
+      1) 在 train_cities 上对 candidate_thresholds 网格搜索严格一致率最高的阈值组；
+      2) 把该阈值组应用到 test_cities 上重新评估，报告测试集的严格 / 容差一致率；
+      3) 同时给出训练集结果作对照。
+
+    若测试集与训练集一致率差距 < 2 个百分点，认为阈值搜索过程未明显过拟合；
+    若差距 > 5 个百分点，应在论文中坦白报告。
+    """
+    if candidate_thresholds is None:
+        candidate_thresholds = [
+            (18, 33, 53), (20, 35, 55), (22, 37, 57),
+            (25, 38, 58), (25, 40, 60), (28, 42, 62), (30, 45, 65),
+        ]
+
+    cities = sorted(df['city_id'].unique())
+    rng = np.random.default_rng(seed)
+    cities_shuffled = list(cities)
+    rng.shuffle(cities_shuffled)
+    train_cities = set(cities_shuffled[:n_train_cities])
+    test_cities = set(cities_shuffled[n_train_cities:])
+
+    train_df = df[df['city_id'].isin(train_cities)].copy()
+    test_df = df[df['city_id'].isin(test_cities)].copy()
+
+    # 网格搜索
+    best_thr = None
+    best_train_consistency = -1.0
+    for thr in candidate_thresholds:
+        r = evaluate(train_df, weights=weights, thresholds=thr)
+        if r['consistency'] > best_train_consistency:
+            best_train_consistency = r['consistency']
+            best_thr = thr
+
+    train_eval = evaluate(train_df, weights=weights, thresholds=best_thr)
+    test_eval = evaluate(test_df, weights=weights, thresholds=best_thr)
+    return {
+        'train_cities': sorted(train_cities),
+        'test_cities': sorted(test_cities),
+        'best_thresholds': best_thr,
+        'train_consistency': train_eval['consistency'],
+        'train_near': train_eval['near'],
+        'train_total': train_eval['total'],
+        'test_consistency': test_eval['consistency'],
+        'test_near': test_eval['near'],
+        'test_total': test_eval['total'],
+    }
+
+
 def main():
     app = create_app()
     with app.app_context():
@@ -178,13 +240,42 @@ def main():
             tag = f'{thr}'
             print(f"{tag:<28}{r['consistency']*100:>9.2f}%{r['near']*100:>13.2f}%")
 
-        # 选定最优阈值再打一次混淆矩阵
-        print('\n>>> 最终方案复核 (70/15/5/10, 阈值 25 / 40 / 60)')
-        best = evaluate(df, weights=(70, 15, 5, 10), thresholds=(25, 40, 60))
+        # 论文表 6-8 默认行使用 25/38/58 — 这里的复核必须与论文一致
+        print('\n>>> 最终方案复核 (70/15/5/10, 阈值 25 / 38 / 58)')
+        best = evaluate(df, weights=(70, 15, 5, 10), thresholds=(25, 38, 58))
         print(f'  严格一致率: {best["consistency"]*100:.2f}%')
         print(f'  ±1 级一致率: {best["near"]*100:.2f}%')
         print('  混淆矩阵:')
         print(best['cm'].to_string())
+
+        # train/test split 
+        print('\n>>> Split 验证 (24 城训练 → 10 城测试)')
+        split = evaluate_with_split(df, n_train_cities=24, seed=42,
+                                    weights=(70, 15, 5, 10))
+        print(f'  训练城市数: {len(split["train_cities"])}, 训练样本: {split["train_total"]}')
+        print(f'  测试城市数: {len(split["test_cities"])}, 测试样本: {split["test_total"]}')
+        print(f'  训练集网格搜索得到的阈值: {split["best_thresholds"]}')
+        print(f'  训练集严格一致率: {split["train_consistency"]*100:.2f}%')
+        print(f'  训练集 ±1 级一致率: {split["train_near"]*100:.2f}%')
+        print(f'  测试集严格一致率: {split["test_consistency"]*100:.2f}%')
+        print(f'  测试集 ±1 级一致率: {split["test_near"]*100:.2f}%')
+        gap = abs(split['train_consistency'] - split['test_consistency']) * 100
+        print(f'  train-test 一致率差距: {gap:.2f} 个百分点 '
+              f'({"未明显过拟合" if gap < 2 else ("轻微过拟合" if gap < 5 else "存在过拟合，应在论文中坦白报告")})')
+
+        # 多种子复核：避免 seed=42 偶然好看
+        print('\n>>> Split 多种子复核')
+        gaps = []
+        for seed in (1, 7, 42, 123, 2025):
+            sp = evaluate_with_split(df, n_train_cities=24, seed=seed,
+                                     weights=(70, 15, 5, 10))
+            g = abs(sp['train_consistency'] - sp['test_consistency']) * 100
+            gaps.append(g)
+            print(f'  seed={seed}: 训练 {sp["train_consistency"]*100:.2f}% / '
+                  f'测试 {sp["test_consistency"]*100:.2f}% / 阈值 {sp["best_thresholds"]} / '
+                  f'差距 {g:.2f} 点')
+        if gaps:
+            print(f'  5 种子平均差距: {sum(gaps)/len(gaps):.2f} 个百分点')
 
 
 if __name__ == '__main__':
