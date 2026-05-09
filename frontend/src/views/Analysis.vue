@@ -110,11 +110,11 @@
             <el-table-column prop="rmse" label="RMSE" min-width="90" />
             <el-table-column prop="mape" label="MAPE" min-width="90" />
             <el-table-column prop="r2" label="R²" min-width="90" />
-            <el-table-column prop="status" label="状态" min-width="110">
+            <!-- <el-table-column prop="status" label="状态" min-width="110">
               <template #default="{ row }">
                 <el-tag :type="row.usedFallback ? 'warning' : 'success'" size="small">{{ row.statusLabel }}</el-tag>
               </template>
-            </el-table-column>
+            </el-table-column> -->
           </el-table>
         </el-card>
         <el-card class="flex-side" v-if="historyStats">

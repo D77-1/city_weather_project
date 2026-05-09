@@ -103,14 +103,23 @@
             {{ row.reviewedAt || '—' }}
           </template>
         </el-table-column>
-        <el-table-column label="AI 归因" width="100" fixed="right">
+        <el-table-column label="AI 归因" width="120" fixed="right">
           <template #default="{ row }">
             <el-button
+              v-if="row.aiAnalysis"
               size="small"
-              :disabled="!row.aiAnalysis"
               @click="openAnalysis(row)"
             >
               <el-icon><View /></el-icon>查看
+            </el-button>
+            <el-button
+              v-else
+              size="small"
+              type="primary"
+              :loading="analyzingId === row.id"
+              @click="generateAnalysis(row)"
+            >
+              <el-icon v-if="analyzingId !== row.id"><MagicStick /></el-icon>生成
             </el-button>
           </template>
         </el-table-column>
@@ -118,16 +127,29 @@
     </div>
 
     <!-- AI 归因详情 -->
-    <el-drawer v-model="analysisVisible" title="AI 异常归因" size="480px">
-      <div v-if="currentAnalysis" class="analysis-body">
-        <div class="analysis-meta">
-          <div><b>时间：</b>{{ currentAnalysis.recordTime }}</div>
-          <div><b>城市：</b>{{ cityMap[currentAnalysis.cityId] }}</div>
-          <div><b>指标：</b>{{ currentAnalysis.metricName }}</div>
-          <div><b>实际值 / 阈值：</b>{{ currentAnalysis.actualValue }} / [{{ currentAnalysis.lowerBound }}, {{ currentAnalysis.upperBound }}]</div>
+    <el-drawer v-model="analysisVisible" :size="520" title="AI 异常归因" direction="rtl">
+      <div v-if="currentAnalysis" class="detail-pane">
+        <div class="detail-meta">
+          <div class="meta-row"><span>城市</span><strong>{{ cityMap[currentAnalysis.cityId] || '—' }}</strong></div>
+          <div class="meta-row"><span>指标 / 时间</span><strong>{{ metricLabel(currentAnalysis.metricName) }} · {{ currentAnalysis.recordTime }}</strong></div>
+          <div class="meta-row"><span>实际值</span><strong class="num">{{ currentAnalysis.actualValue }}</strong></div>
+          <div class="meta-row"><span>IQR 正常范围</span><strong class="num">{{ currentAnalysis.lowerBound }} ~ {{ currentAnalysis.upperBound }}</strong></div>
+          <div class="meta-row">
+            <span>严重度 / 方向</span>
+            <strong>
+              <el-tag :type="severityType(currentAnalysis.severity)" size="small" style="margin-right:6px">{{ severityLabel(currentAnalysis.severity) }}</el-tag>
+              <el-tag :type="currentAnalysis.anomalyType === 'high' ? 'danger' : 'primary'" size="small">{{ currentAnalysis.anomalyType === 'high' ? '偏高' : '偏低' }}</el-tag>
+            </strong>
+          </div>
         </div>
-        <el-divider />
-        <pre class="analysis-text">{{ currentAnalysis.aiAnalysis }}</pre>
+
+        <div class="detail-block">
+          <div class="block-head">
+            <h4>AI 归因分析</h4>
+          </div>
+          <div v-if="currentAnalysis.aiAnalysis" class="ai-content">{{ currentAnalysis.aiAnalysis }}</div>
+          <el-empty v-else description="尚未生成归因分析" :image-size="80" />
+        </div>
       </div>
     </el-drawer>
   </div>
@@ -136,7 +158,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, View } from '@element-plus/icons-vue'
+import { Refresh, View, MagicStick } from '@element-plus/icons-vue'
 import { anomalyApi, cityApi, adminAnomalyApi } from '@/api/modules'
 
 const loading = ref(false)
@@ -154,6 +176,7 @@ const filters = reactive({
 
 const analysisVisible = ref(false)
 const currentAnalysis = ref(null)
+const analyzingId = ref(null)
 
 async function loadCities() {
   cities.value = await cityApi.getList()
@@ -202,10 +225,28 @@ function openAnalysis(row) {
   analysisVisible.value = true
 }
 
+async function generateAnalysis(row) {
+  analyzingId.value = row.id
+  try {
+    const updated = await anomalyApi.analyze(row.id)
+    Object.assign(row, updated)
+    currentAnalysis.value = row
+    analysisVisible.value = true
+    ElMessage.success('AI 归因已生成')
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || '归因生成失败')
+  } finally {
+    analyzingId.value = null
+  }
+}
+
 function severityLabel(s) { return { mild: '轻度', moderate: '中度', severe: '重度' }[s] || s }
 function severityType(s) { return { mild: '', moderate: 'warning', severe: 'danger' }[s] || '' }
 function statusLabel(s) { return { pending: '待处理', confirmed: '已确认', dismissed: '已忽略' }[s] || s }
 function statusType(s) { return { pending: 'warning', confirmed: 'danger', dismissed: 'info' }[s] || '' }
+function metricLabel(m) {
+  return ({ aqi: 'AQI', pm25: 'PM2.5', pm10: 'PM10', so2: 'SO₂', no2: 'NO₂', co: 'CO', o3: 'O₃' })[m] || (m ? m.toUpperCase() : '—')
+}
 
 onMounted(async () => {
   await loadCities()
@@ -252,20 +293,98 @@ onMounted(async () => {
 
 .range { color: var(--text-muted); font-size: 12px; }
 
-.analysis-body { padding: 0 4px; }
-
-.analysis-meta {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 2;
+.detail-pane {
+  padding: 0 20px 20px;
+  display: grid;
+  gap: 18px;
 }
 
-.analysis-text {
-  white-space: pre-wrap;
-  line-height: 1.8;
+.detail-meta {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: rgba(7, 18, 31, 0.55);
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 13px;
+}
+
+.meta-row span {
+  color: var(--text-muted);
+}
+
+.meta-row strong {
   color: var(--text-primary);
-  font-family: inherit;
+  font-weight: 600;
+}
+
+.detail-block {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: rgba(7, 18, 31, 0.55);
+}
+
+.block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.block-head h4 {
   margin: 0;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.ai-content {
+  white-space: pre-wrap;
+  line-height: 1.85;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+:deep(.el-drawer) {
+  background: linear-gradient(180deg, rgba(10, 22, 37, 0.96), rgba(6, 14, 24, 0.96));
+  color: var(--text-primary);
+  backdrop-filter: blur(18px);
+  border-left: 1px solid var(--border-color);
+}
+
+:deep(.el-drawer__header) {
+  margin-bottom: 0;
+  padding: 20px 22px;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, rgba(127, 246, 234, 0.08), transparent 60%);
+}
+
+:deep(.el-drawer__title) {
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+:deep(.el-drawer__close-btn) {
+  color: var(--text-secondary);
+}
+
+:deep(.el-drawer__close-btn:hover) {
+  color: var(--primary-light);
+}
+
+:deep(.el-drawer__body) {
+  padding: 0;
+  background: transparent;
+  color: var(--text-primary);
 }
 </style>

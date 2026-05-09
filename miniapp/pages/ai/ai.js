@@ -66,7 +66,8 @@ Page({
           message: text,
           sessionId: this.data.sessionId,
           cityId: this.data.cityContext?.cityId,
-          context
+          context,
+          source: 'miniapp'
         }
       })
 

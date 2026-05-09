@@ -127,6 +127,7 @@ async function sendMessage() {
       sessionId: sessionId.value,
       cityId: props.cityId,
       context: props.context,
+      source: 'web',
     })
     messages.value.push({
       role: 'ai',

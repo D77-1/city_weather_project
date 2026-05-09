@@ -317,6 +317,101 @@ body::before {
   color: var(--text-muted) !important;
 }
 
+/* === DatePicker 暗色面板 === */
+.el-picker__popper.el-popper,
+.el-popper.is-pure {
+  background: var(--bg-card-strong) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.el-picker-panel,
+.el-picker-panel__body,
+.el-picker-panel__body-wrapper,
+.el-picker-panel__sidebar,
+.el-date-range-picker,
+.el-date-range-picker__content,
+.el-date-picker__time-header,
+.el-date-picker__header,
+.el-time-panel,
+.el-time-panel__content,
+.el-time-spinner,
+.el-time-spinner__wrapper,
+.el-time-spinner__list {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.el-date-range-picker__content.is-left {
+  border-right: 1px solid var(--border-color) !important;
+}
+
+.el-picker-panel__icon-btn,
+.el-date-picker__header-label,
+.el-date-range-picker__header div,
+.el-time-spinner__item {
+  color: var(--text-secondary) !important;
+}
+
+.el-picker-panel__icon-btn:hover,
+.el-date-picker__header-label:hover {
+  color: var(--primary-light) !important;
+}
+
+.el-date-table th,
+.el-date-table-cell,
+.el-time-spinner__item {
+  color: var(--text-secondary) !important;
+}
+
+.el-date-table td.disabled .el-date-table-cell,
+.el-date-table td.disabled .el-date-table-cell__text {
+  color: var(--text-muted) !important;
+  background: transparent !important;
+}
+
+.el-date-table td.in-range .el-date-table-cell,
+.el-date-table td.in-range:hover .el-date-table-cell {
+  background: rgba(39, 211, 195, 0.12) !important;
+}
+
+.el-date-table td.start-date .el-date-table-cell__text,
+.el-date-table td.end-date .el-date-table-cell__text,
+.el-date-table td.current:not(.disabled) .el-date-table-cell__text {
+  background: linear-gradient(135deg, rgba(39, 211, 195, 0.95), rgba(110, 168, 255, 0.95)) !important;
+  color: #041019 !important;
+}
+
+.el-date-table td.today .el-date-table-cell__text {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+.el-time-spinner__item.is-active:not(.is-disabled),
+.el-time-spinner__item:hover:not(.is-disabled) {
+  background: rgba(39, 211, 195, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.el-picker-panel__footer {
+  background: transparent !important;
+  border-top: 1px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+.el-picker-panel__footer .el-button--text {
+  color: var(--primary-light) !important;
+}
+
+.el-input__wrapper .el-range-input {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.el-input__wrapper .el-range-input::placeholder,
+.el-input__wrapper .el-range-separator {
+  color: var(--text-muted) !important;
+}
+
 .el-popper.is-light .el-popper__arrow::before {
   background: var(--bg-card-strong) !important;
   border-color: var(--border-color) !important;

@@ -48,9 +48,7 @@
         >登 录</el-button>
       </el-form>
 
-      <div class="login-hint">
-        首次部署默认账号 <code>admin</code> / <code>admin123</code>，登录后请在「用户管理」修改密码
-      </div>
+      
 
       <router-link class="login-back" to="/">返回门户首页 →</router-link>
     </div>
