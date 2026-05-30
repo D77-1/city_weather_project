@@ -19,8 +19,8 @@
           <div class="hero-meta-card">
             <span class="meta-label">城市等级</span>
             <strong>{{ city?.cityLevel || '--' }}</strong>
-            <span class="meta-label">监测站点</span>
-            <strong>{{ stations.length }}</strong>
+            <!-- <span class="meta-label">监测站点</span>
+            <strong>{{ stations.length }}</strong> -->
           </div>
         </div>
       </section>
@@ -120,9 +120,9 @@
         <el-descriptions-item label="城市编码">{{ city?.cityCode }}</el-descriptions-item>
         <el-descriptions-item label="城市等级">{{ city?.cityLevel }}</el-descriptions-item>
         <el-descriptions-item label="常住人口">{{ city?.population != null ? city.population + ' 万' : '--' }}</el-descriptions-item>
-        <el-descriptions-item label="监测站点">
+        <!-- <el-descriptions-item label="监测站点">
           <el-tag v-for="s in stations" :key="s.id" size="small" class="station-tag">{{ s.stationName }}</el-tag>
-        </el-descriptions-item>
+        </el-descriptions-item> -->
       </el-descriptions>
 
       <div class="charts-grid">
@@ -949,6 +949,7 @@ onMounted(async () => {
 
 .forecast-row {
   display: flex;
+  justify-content: space-between;
   gap: 10px;
   overflow-x: auto;
   padding: 4px 0;

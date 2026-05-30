@@ -38,7 +38,7 @@
         <span class="chip-value">{{ currentDate }}</span>
       </div>
       <div class="nav-group">
-        <el-button text size="small" class="nav-link" @click="$router.push('/analysis')">数据分析</el-button>
+        <el-button text size="small" class="nav-link" @click="$router.push('/analysis')">预测分析</el-button>
         <el-button text size="small" class="nav-link" @click="$router.push('/compare')">城市对比</el-button>
         <el-button text size="small" class="nav-link" @click="$router.push('/report')">数据报告</el-button>
         <el-button text size="small" class="nav-link" @click="$router.push('/anomaly')">异常管理</el-button>

@@ -159,15 +159,14 @@ def evaluate(df, weights=(70, 15, 5, 10), thresholds=(20, 35, 55)):
 def evaluate_with_split(df, n_train_cities=24, seed=42, weights=(70, 15, 5, 10),
                         candidate_thresholds=None):
     """
-    按城市切分 train/test，回答老师 #124：网格搜索阈值是否过拟合到这批数据。
+    按城市切分 train/test 网格搜索阈值是否过拟合到这批数据。
 
     流程：
       1) 在 train_cities 上对 candidate_thresholds 网格搜索严格一致率最高的阈值组；
       2) 把该阈值组应用到 test_cities 上重新评估，报告测试集的严格 / 容差一致率；
       3) 同时给出训练集结果作对照。
 
-    若测试集与训练集一致率差距 < 2 个百分点，认为阈值搜索过程未明显过拟合；
-    若差距 > 5 个百分点，应在论文中坦白报告。
+    若测试集与训练集一致率差距 < 2 个百分点，认为阈值搜索过程未明显过拟合
     """
     if candidate_thresholds is None:
         candidate_thresholds = [

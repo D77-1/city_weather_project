@@ -80,7 +80,7 @@
                 <div class="card-header card-header--stacked">
                   <div>
                     <span>污染物浓度雷达</span>
-                    <p>适合在答辩中快速展示多指标结构差异。</p>
+                    <p>适合快速展示多指标结构差异。</p>
                   </div>
                 </div>
               </template>

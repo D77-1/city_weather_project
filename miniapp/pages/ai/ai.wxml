@@ -2,7 +2,7 @@
   <view wx:if="{{messages.length === 0}}" class="welcome">
     <view class="welcome-kicker">RESEARCH ASSISTANT</view>
     <view class="welcome-title">AI 空气质量助手</view>
-    <view class="welcome-text">我可以解读空气质量数据、分析趋势，并给出适合答辩展示的话术摘要。</view>
+    <view class="welcome-text">我可以解读空气质量数据、分析趋势</view>
     <view class="quick-list">
       <view class="quick-btn" wx:for="{{quickQuestions}}" wx:key="*this" bindtap="sendQuick" data-text="{{item}}">{{item}}</view>
     </view>
