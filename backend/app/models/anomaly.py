@@ -21,10 +21,14 @@ class AnomalyEvent(db.Model):
     severity = db.Column(db.Enum('mild', 'moderate', 'severe'), default='mild')
     status = db.Column(db.Enum('pending', 'confirmed', 'dismissed'), default='pending')
     description = db.Column(db.Text)
+    ai_analysis = db.Column(db.Text, comment='AI 归因分析结果')
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True, comment='审核人 user_id')
+    reviewed_at = db.Column(db.DateTime, nullable=True, comment='审核时间')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     city = db.relationship('City', backref=db.backref('anomalies', lazy='dynamic'))
     station = db.relationship('MonitoringStation', backref=db.backref('anomalies', lazy='dynamic'))
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
 
     def to_dict(self):
         return {
@@ -43,4 +47,8 @@ class AnomalyEvent(db.Model):
             'severity': self.severity,
             'status': self.status,
             'description': self.description,
+            'aiAnalysis': self.ai_analysis,
+            'reviewedBy': self.reviewed_by,
+            'reviewerName': self.reviewer.nickname or self.reviewer.username if self.reviewer else None,
+            'reviewedAt': self.reviewed_at.strftime('%Y-%m-%d %H:%M:%S') if self.reviewed_at else None,
         }

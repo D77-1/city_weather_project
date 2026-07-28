@@ -130,12 +130,16 @@ CREATE TABLE anomaly_events (
     severity        ENUM('mild','moderate','severe') DEFAULT 'mild' COMMENT '严重程度',
     status          ENUM('pending','confirmed','dismissed') DEFAULT 'pending' COMMENT '处理状态',
     description     TEXT            DEFAULT NULL COMMENT '异常描述',
+    ai_analysis     TEXT            DEFAULT NULL COMMENT 'AI 归因分析结果',
+    reviewed_by     INT UNSIGNED    DEFAULT NULL COMMENT '审核人 user_id',
+    reviewed_at     DATETIME        DEFAULT NULL COMMENT '审核时间',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     INDEX idx_city_metric (city_id, metric_name),
     INDEX idx_record_time (record_time),
     INDEX idx_severity (severity),
     INDEX idx_status (status),
+    INDEX idx_reviewed_by (reviewed_by),
     CONSTRAINT fk_anomaly_city FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE CASCADE,
     CONSTRAINT fk_anomaly_station FOREIGN KEY (station_id) REFERENCES monitoring_stations(id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='IQR异常事件记录表';
@@ -187,3 +191,12 @@ CREATE TABLE ai_interaction_logs (
     CONSTRAINT fk_ailog_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_ailog_city FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='AI对话日志表';
+
+
+-- ============================================================
+-- 默认管理员（幂等插入）
+-- 账号: admin  密码: admin123  （bcrypt 12 轮加盐哈希）
+-- 若数据库由 Flask 自动建表，初始化逻辑也会生成同一账号，两者不会冲突。
+-- ============================================================
+INSERT IGNORE INTO users (username, password_hash, nickname, role)
+VALUES ('admin', '$2b$12$YOv2PN.Q.Tr69uGTHI6HfuuJ3UulI168D14/rEdQZ2zVV9rOO.LN2', '系统管理员', 'admin');

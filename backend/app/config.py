@@ -22,3 +22,8 @@ class Config:
 
     # DashScope
     DASHSCOPE_API_KEY = os.getenv('DASHSCOPE_API_KEY', '')
+
+    # JWT 鉴权
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', SECRET_KEY)
+    JWT_EXPIRE_HOURS = int(os.getenv('JWT_EXPIRE_HOURS', '24'))
+    JWT_ALGORITHM = 'HS256'

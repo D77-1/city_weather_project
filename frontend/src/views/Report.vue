@@ -1,137 +1,184 @@
 <template>
-  <div class="report-page">
+  <div class="report-page page-shell">
     <AppHeader @city-change="onCityChange" />
+
     <div class="report-content" v-loading="loading">
-      <el-page-header @back="$router.push('/')" style="padding: 16px 24px 0">
-        <template #content><span class="page-title">{{ cityName }} 数据报告</span></template>
-      </el-page-header>
+      <section class="page-section report-intro">
+        <div class="section-heading">
+          <span class="section-kicker">REPORT</span>
+          <h2 class="section-title">{{ cityName }} 数据报告</h2>
+        </div>
 
-      <!-- 控制栏 -->
-      <div class="ctrl-bar">
-        <el-radio-group v-model="period" @change="loadReport">
-          <el-radio-button value="30">近30天</el-radio-button>
-          <el-radio-button value="90">近90天</el-radio-button>
-          <el-radio-button value="180">半年</el-radio-button>
-          <el-radio-button value="365">近一年</el-radio-button>
-        </el-radio-group>
-      </div>
-
-      <!-- 顶部统计 - 不对称两行 -->
-      <div class="stat-row" v-if="stats">
-        <el-card class="stat-card stat-big" shadow="hover">
-          <div class="stat-val" style="color: var(--primary)">{{ stats.avg }}</div>
-          <div class="stat-label">平均 AQI</div>
-        </el-card>
-        <el-card class="stat-card stat-mid" shadow="hover">
-          <div class="stat-val" style="color: var(--danger)">{{ stats.max }}</div>
-          <div class="stat-label">峰值 AQI</div>
-        </el-card>
-        <el-card class="stat-card stat-mid" shadow="hover">
-          <div class="stat-val" style="color: var(--success)">{{ stats.min }}</div>
-          <div class="stat-label">谷值 AQI</div>
-        </el-card>
-      </div>
-      <div class="stat-row stat-row-2" v-if="stats">
-        <el-card class="stat-card stat-mid" shadow="hover">
-          <div class="stat-val" style="color: var(--success)">{{ stats.good }} 天</div>
-          <div class="stat-label">优良天数</div>
-        </el-card>
-        <el-card class="stat-card stat-big" shadow="hover">
-          <div class="stat-val" style="color: var(--primary)">{{ stats.goodRate }}%</div>
-          <div class="stat-label">优良率</div>
-        </el-card>
-        <el-card class="stat-card stat-sm" shadow="hover">
-          <div class="stat-val" style="color: var(--warning)">{{ stats.pollutedDays }} 天</div>
-          <div class="stat-label">污染天数</div>
-        </el-card>
-      </div>
-
-      <!-- 图表区: AQI 分布 + 等级占比 - 不对称 -->
-      <div class="charts-row">
-        <el-card>
-          <template #header><span>AQI 分布区间</span></template>
-          <EChartWrapper :option="histogramOption" height="300px" />
-        </el-card>
-        <el-card>
-          <template #header><span>空气质量等级占比</span></template>
-          <EChartWrapper :option="pieOption" height="300px" />
-        </el-card>
-      </div>
-
-      <!-- 图表区: 月均趋势 + 污染物月均 -->
-      <div class="charts-row">
-        <el-card>
-          <template #header><span>每月 AQI 均值</span></template>
-          <EChartWrapper :option="monthlyOption" height="300px" />
-        </el-card>
-        <el-card>
-          <template #header><span>各污染物月均浓度</span></template>
-          <EChartWrapper :option="pollutantMonthlyOption" height="300px" />
-        </el-card>
-      </div>
-
-      <!-- 天气 vs AQI 相关性 -->
-      <el-card style="margin: 0 24px 16px">
-        <template #header><span>温度与 AQI 相关性分析</span></template>
-        <EChartWrapper :option="scatterOption" height="320px" />
-      </el-card>
-
-      <!-- 7日天气预报 -->
-      <el-card style="margin: 0 24px 16px" v-if="forecast.length > 0">
-        <template #header><span>未来 7 天天气</span></template>
-        <div class="forecast-row">
-          <div class="fc-card" v-for="f in forecast" :key="f.date">
-            <div class="fc-day">{{ f.weekday }}</div>
-            <div class="fc-date">{{ f.dateShort }}</div>
-            <Icon :icon="weatherIcon(f.weatherText || f.emoji)" width="32" class="fc-icon" />
-            <div class="fc-text">{{ f.weatherText }}</div>
-            <div class="fc-temp">
-              <span class="temp-max">{{ f.tempMax }}°</span>
-              <span class="temp-min">{{ f.tempMin }}°</span>
+        <el-card class="intro-card">
+          <div class="intro-topbar">
+            <div>
+              <p class="intro-kicker">研究周期</p>
+              <h3 class="intro-title">围绕空气质量分布、结构、天气与月均变化生成汇总报告</h3>
             </div>
-            <div class="fc-detail">
-              <span><Icon icon="mdi:water-outline" width="12" />{{ f.precipitation }}mm</span>
-              <span><Icon icon="mdi:weather-windy" width="12" />{{ f.windSpeedMax }}m/s</span>
-            </div>
+            <el-radio-group v-model="period" @change="loadReport">
+              <el-radio-button value="30">近30天</el-radio-button>
+              <el-radio-button value="90">近90天</el-radio-button>
+              <el-radio-button value="180">半年</el-radio-button>
+              <el-radio-button value="365">近一年</el-radio-button>
+            </el-radio-group>
+          </div>
+        </el-card>
+      </section>
+
+      <section class="page-section" v-if="stats">
+        <div class="section-heading compact-heading">
+          <span class="section-kicker">OVERVIEW</span>
+          <h2 class="section-title">报告总览</h2>
+        </div>
+        <div class="stat-row">
+          <el-card class="stat-card stat-big">
+            <div class="stat-val" style="color: var(--aq-primary)">{{ stats.avg }}</div>
+            <div class="stat-label">平均 AQI</div>
+          </el-card>
+          <el-card class="stat-card stat-mid">
+            <div class="stat-val" style="color: var(--aq-danger)">{{ stats.max }}</div>
+            <div class="stat-label">峰值 AQI</div>
+          </el-card>
+          <el-card class="stat-card stat-mid">
+            <div class="stat-val" style="color: var(--aq-success)">{{ stats.min }}</div>
+            <div class="stat-label">谷值 AQI</div>
+          </el-card>
+        </div>
+        <div class="stat-row stat-row-2">
+          <el-card class="stat-card stat-mid">
+            <div class="stat-val" style="color: var(--aq-success)">{{ stats.good }} 天</div>
+            <div class="stat-label">优良天数</div>
+          </el-card>
+          <el-card class="stat-card stat-big">
+            <div class="stat-val" style="color: var(--aq-primary)">{{ stats.goodRate }}%</div>
+            <div class="stat-label">优良率</div>
+          </el-card>
+          <el-card class="stat-card stat-sm">
+            <div class="stat-val" style="color: var(--aq-warning)">{{ stats.pollutedDays }} 天</div>
+            <div class="stat-label">污染天数</div>
+          </el-card>
+        </div>
+      </section>
+
+      <section class="page-section report-grid">
+        <div>
+          <div class="section-heading compact-heading">
+            <span class="section-kicker">DISTRIBUTION</span>
+            <h2 class="section-title">分布与等级</h2>
+          </div>
+          <div class="charts-row">
+            <el-card class="report-card">
+              <template #header><div class="card-header"><span>AQI 分布区间</span><p>统计不同空气质量区间的出现天数。</p></div></template>
+              <EChartWrapper :option="histogramOption" height="300px" />
+            </el-card>
+            <el-card class="report-card">
+              <template #header><div class="card-header"><span>空气质量等级占比</span><p>从比例视角展示优良与污染等级构成。</p></div></template>
+              <EChartWrapper :option="pieOption" height="300px" />
+            </el-card>
           </div>
         </div>
-      </el-card>
 
-      <!-- 数据明细表格 -->
-      <el-card style="margin: 0 24px 24px">
-        <template #header>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span>历史数据明细</span>
-            <el-button size="small" @click="exportCSV">导出 CSV</el-button>
+        <div>
+          <div class="section-heading compact-heading">
+            <span class="section-kicker">TRENDS</span>
+            <h2 class="section-title">月均与相关性</h2>
           </div>
-        </template>
-        <el-table :data="history.slice(0, 50)" stripe size="small" max-height="400">
-          <el-table-column prop="date" label="日期" width="100" />
-          <el-table-column prop="aqi" label="AQI" width="70" />
-          <el-table-column prop="pm25" label="PM2.5" width="80" />
-          <el-table-column prop="pm10" label="PM10" width="80" />
-          <el-table-column prop="so2" label="SO₂" width="70" />
-          <el-table-column prop="no2" label="NO₂" width="70" />
-          <el-table-column prop="co" label="CO" width="70" />
-          <el-table-column prop="o3" label="O₃" width="70" />
-          <el-table-column prop="temperature" label="温度℃" width="80" />
-          <el-table-column prop="humidity" label="湿度%" width="80" />
-        </el-table>
-      </el-card>
+          <div class="charts-row">
+            <el-card class="report-card">
+              <template #header><div class="card-header"><span>每月 AQI 均值</span><p>适合展示阶段性空气质量改善或恶化趋势。</p></div></template>
+              <EChartWrapper :option="monthlyOption" height="300px" />
+            </el-card>
+            <el-card class="report-card">
+              <template #header><div class="card-header"><span>各污染物月均浓度</span><p>比较 PM2.5、PM10、NO₂、O₃ 的月均变化。</p></div></template>
+              <EChartWrapper :option="pollutantMonthlyOption" height="300px" />
+            </el-card>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="section-heading compact-heading">
+          <span class="section-kicker">CORRELATION</span>
+          <h2 class="section-title">深度分析</h2>
+        </div>
+        <div class="charts-row">
+          <el-card class="report-card">
+            <template #header><div class="card-header"><span>污染物相关性矩阵</span><p>展示六项污染物浓度之间的皮尔逊相关系数，揭示同源性。</p></div></template>
+            <EChartWrapper :option="heatmapOption" height="360px" />
+          </el-card>
+          <el-card class="report-card">
+            <template #header><div class="card-header"><span>季度 AQI 分布</span><p>通过箱线图展示不同季度的 AQI 分布特征与季节差异。</p></div></template>
+            <EChartWrapper :option="boxplotOption" height="360px" />
+          </el-card>
+        </div>
+      </section>
+
+      <section class="page-section" v-if="forecast.length > 0">
+        <div class="section-heading compact-heading">
+          <span class="section-kicker">FORECAST</span>
+          <h2 class="section-title">未来 7 天天气</h2>
+        </div>
+        <el-card class="report-card forecast-card-wrap">
+          <div class="forecast-row">
+            <div class="fc-card" v-for="f in forecast" :key="f.date">
+              <div class="fc-day">{{ f.weekday }}</div>
+              <div class="fc-date">{{ f.dateShort }}</div>
+              <img :src="weatherIcon(f.weatherText || f.emoji)" width="32" height="32" alt="" class="fc-icon" />
+              <div class="fc-text">{{ f.weatherText }}</div>
+              <div class="fc-temp">
+                <span class="temp-max">{{ f.tempMax }}°</span>
+                <span class="temp-min">{{ f.tempMin }}°</span>
+              </div>
+              <div class="fc-detail">
+                <span><Icon icon="mdi:water-outline" width="12" /> {{ f.precipitation }}mm</span>
+                <span><Icon icon="mdi:weather-windy" width="12" /> {{ f.windSpeedMax }}m/s</span>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </section>
+
+      <section class="page-section">
+        <div class="section-heading compact-heading">
+          <span class="section-kicker">DETAILS</span>
+          <h2 class="section-title">历史数据明细</h2>
+        </div>
+        <el-card class="report-card">
+          <template #header>
+            <div class="table-header">
+              <div>
+                <span>历史数据明细</span>
+                <p>展示最近一段时间的原始监测结果。</p>
+              </div>
+              <el-button size="small" @click="exportCSV">导出 CSV</el-button>
+            </div>
+          </template>
+          <el-table :data="history" stripe size="small" max-height="400">
+            <el-table-column prop="date" label="日期" width="100" />
+            <el-table-column prop="aqi" label="AQI" width="70" />
+            <el-table-column prop="pm25" label="PM2.5" width="80" />
+            <el-table-column prop="pm10" label="PM10" width="80" />
+            <el-table-column prop="so2" label="SO₂" width="70" />
+            <el-table-column prop="no2" label="NO₂" width="70" />
+            <el-table-column prop="co" label="CO" width="70" />
+            <el-table-column prop="o3" label="O₃" width="70" />
+            <el-table-column prop="temperature" label="温度℃" width="80" />
+            <el-table-column prop="humidity" label="湿度%" width="80" />
+          </el-table>
+        </el-card>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useCityStore } from '@/stores/city'
 import { airQualityApi, weatherApi } from '@/api/modules'
 import { Icon } from '@iconify/vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import EChartWrapper from '@/components/charts/EChartWrapper.vue'
 
-const router = useRouter()
 const cityStore = useCityStore()
 const loading = ref(false)
 const period = ref('90')
@@ -156,11 +203,10 @@ const stats = computed(() => {
   }
 })
 
-// AQI 分布直方图
 const histogramOption = computed(() => {
   const bins = [0, 50, 100, 150, 200, 300, 500]
   const labels = ['优(0-50)', '良(51-100)', '轻度(101-150)', '中度(151-200)', '重度(201-300)', '严重(>300)']
-  const colors = ['#2d6a4f', '#d4a373', '#e07a5f', '#c1121f', '#780116', '#4a0010']
+  const colors = ['#2d6a4f', '#a8743f', '#c86b4b', '#b42318', '#780116', '#4a0010']
   const counts = new Array(6).fill(0)
   history.value.forEach(r => {
     if (!r.aqi) return
@@ -170,17 +216,16 @@ const histogramOption = computed(() => {
   })
   return {
     tooltip: { trigger: 'axis' },
-    grid: { left: 50, right: 20, top: 20, bottom: 40 },
-    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10 } },
-    yAxis: { type: 'value', name: '天数' },
-    series: [{ type: 'bar', data: counts.map((v, i) => ({ value: v, itemStyle: { color: colors[i] } })), barWidth: '60%' }],
+    grid: { left: 50, right: 20, top: 24, bottom: 40 },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9bb0c8' } },
+    yAxis: { type: 'value', name: '天数', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
+    series: [{ type: 'bar', data: counts.map((v, i) => ({ value: v, itemStyle: { color: colors[i], borderRadius: [10, 10, 0, 0] } })), barWidth: '60%' }],
   }
 })
 
-// 等级饼图
 const pieOption = computed(() => {
   const levels = ['优', '良', '轻度污染', '中度污染', '重度污染', '严重污染']
-  const colors = ['#2d6a4f', '#d4a373', '#e07a5f', '#c1121f', '#780116', '#4a0010']
+  const colors = ['#2d6a4f', '#a8743f', '#c86b4b', '#b42318', '#780116', '#4a0010']
   const bins = [0, 50, 100, 150, 200, 300, 500]
   const counts = new Array(6).fill(0)
   history.value.forEach(r => {
@@ -192,14 +237,13 @@ const pieOption = computed(() => {
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c}天 ({d}%)' },
     series: [{
-      type: 'pie', radius: ['40%', '70%'],
+      type: 'pie', radius: ['42%', '72%'],
       data: levels.map((n, i) => ({ name: n, value: counts[i], itemStyle: { color: colors[i] } })).filter(d => d.value > 0),
-      label: { formatter: '{b}\n{d}%', fontSize: 11 },
+      label: { formatter: '{b}\n{d}%', fontSize: 11, color: '#b7c8dc' },
     }],
   }
 })
 
-// 月均趋势
 const monthlyOption = computed(() => {
   const monthMap = {}
   history.value.forEach(r => {
@@ -212,18 +256,17 @@ const monthlyOption = computed(() => {
   const avgs = months.map(m => Math.round(monthMap[m].reduce((s, v) => s + v, 0) / monthMap[m].length))
   return {
     tooltip: { trigger: 'axis' },
-    grid: { left: 50, right: 20, top: 20, bottom: 40 },
-    xAxis: { type: 'category', data: months },
-    yAxis: { type: 'value', name: 'AQI' },
+    grid: { left: 50, right: 20, top: 24, bottom: 40 },
+    xAxis: { type: 'category', data: months, axisLabel: { color: '#9bb0c8' } },
+    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
     series: [{
       type: 'bar', data: avgs,
-      itemStyle: { color: (p) => p.value > 100 ? '#c1121f' : p.value > 50 ? '#d4a373' : '#2d6a4f' },
-      label: { show: true, position: 'top', fontSize: 10 },
+      itemStyle: { color: (p) => p.value > 100 ? '#ff6b81' : p.value > 50 ? '#f0b65a' : '#32d296', borderRadius: [10, 10, 0, 0] },
+      label: { show: true, position: 'top', fontSize: 10, color: '#b7c8dc' },
     }],
   }
 })
 
-// 各污染物月均
 const pollutantMonthlyOption = computed(() => {
   const monthMap = {}
   history.value.forEach(r => {
@@ -238,66 +281,197 @@ const pollutantMonthlyOption = computed(() => {
   const months = Object.keys(monthMap).sort()
   const avg = arr => arr.length ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length * 10) / 10 : 0
   const items = [
-    { name: 'PM2.5', key: 'pm25', color: '#0d9488' },
-    { name: 'PM10', key: 'pm10', color: '#2d6a4f' },
-    { name: 'NO₂', key: 'no2', color: '#d4a373' },
-    { name: 'O₃', key: 'o3', color: '#e07a5f' },
+    { name: 'PM2.5', key: 'pm25', color: '#1e5c5a' },
+    { name: 'PM10', key: 'pm10', color: '#5f6f52' },
+    { name: 'NO₂', key: 'no2', color: '#a8743f' },
+    { name: 'O₃', key: 'o3', color: '#c86b4b' },
   ]
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: items.map(i => i.name), bottom: 5 },
-    grid: { left: 50, right: 20, top: 20, bottom: 50 },
-    xAxis: { type: 'category', data: months },
-    yAxis: { type: 'value', name: 'μg/m³' },
+    legend: { data: items.map(i => i.name), bottom: 5, textStyle: { color: '#b7c8dc' } },
+    grid: { left: 50, right: 20, top: 24, bottom: 50 },
+    xAxis: { type: 'category', data: months, axisLabel: { color: '#9bb0c8' } },
+    yAxis: { type: 'value', name: 'μg/m³', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
     series: items.map(item => ({
       name: item.name, type: 'line', smooth: true, symbol: 'none',
       data: months.map(m => avg(monthMap[m][item.key])),
-      lineStyle: { color: item.color }, itemStyle: { color: item.color },
+      lineStyle: { color: item.color, width: 2.5 }, itemStyle: { color: item.color },
     })),
   }
 })
 
-// 温度 vs AQI 散点
-const scatterOption = computed(() => {
-  const data = history.value.filter(r => r.temperature != null && r.aqi).map(r => [r.temperature, r.aqi])
+// 污染物相关性热力图
+const heatmapOption = computed(() => {
+  const metrics = ['PM2.5', 'PM10', 'SO₂', 'NO₂', 'CO', 'O₃']
+  const keys = ['pm25', 'pm10', 'so2', 'no2', 'co', 'o3']
+  const rows = history.value.filter(r => r.aqi)
+
+  if (rows.length < 5) return { graphic: { type: 'text', left: 'center', top: 'middle', style: { text: '数据不足', fill: '#999' } } }
+
+  // 提取各指标数组
+  const arrays = keys.map(k => rows.map(r => r[k] || 0))
+
+  // 计算皮尔逊相关系数
+  function pearson(a, b) {
+    const n = a.length
+    const meanA = a.reduce((s, v) => s + v, 0) / n
+    const meanB = b.reduce((s, v) => s + v, 0) / n
+    let num = 0, denA = 0, denB = 0
+    for (let i = 0; i < n; i++) {
+      const da = a[i] - meanA, db = b[i] - meanB
+      num += da * db; denA += da * da; denB += db * db
+    }
+    const den = Math.sqrt(denA * denB)
+    return den === 0 ? 0 : num / den
+  }
+
+  const data = []
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = 0; j < keys.length; j++) {
+      const r = parseFloat(pearson(arrays[i], arrays[j]).toFixed(2))
+      data.push([j, i, r])
+    }
+  }
+
   return {
-    tooltip: { formatter: p => `温度: ${p.value[0]}℃<br/>AQI: ${p.value[1]}` },
-    grid: { left: 60, right: 20, top: 20, bottom: 50 },
-    xAxis: { type: 'value', name: '温度 (℃)' },
-    yAxis: { type: 'value', name: 'AQI' },
+    tooltip: { formatter: p => `${metrics[p.value[1]]} vs ${metrics[p.value[0]]}<br/>相关系数: ${p.value[2]}` },
+    grid: { left: 70, right: 40, top: 10, bottom: 50 },
+    xAxis: { type: 'category', data: metrics, axisLabel: { color: '#9bb0c8' }, splitArea: { show: true, areaStyle: { color: ['rgba(124,154,188,0.04)', 'rgba(124,154,188,0.08)'] } } },
+    yAxis: { type: 'category', data: metrics, axisLabel: { color: '#9bb0c8' }, splitArea: { show: true, areaStyle: { color: ['rgba(124,154,188,0.04)', 'rgba(124,154,188,0.08)'] } } },
+    visualMap: { min: -1, max: 1, calculable: true, orient: 'vertical', right: 0, top: 'center', inRange: { color: ['#32d296', '#1a2e3d', '#ff6b81'] }, textStyle: { color: '#9bb0c8' } },
     series: [{
-      type: 'scatter', data,
-      symbolSize: 6,
-      itemStyle: { color: 'rgba(13,148,136,0.45)' },
+      type: 'heatmap', data,
+      label: { show: true, formatter: p => p.value[2].toFixed(2), fontSize: 11 },
+      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.3)' } },
     }],
   }
 })
 
-function weatherIcon(condition) {
-  const map = {
-    '晴': 'meteocons:clear-day-fill',
-    '多云': 'meteocons:partly-cloudy-day-fill',
-    '阴': 'meteocons:overcast-fill',
-    '小雨': 'meteocons:drizzle-fill',
-    '中雨': 'meteocons:rain-fill',
-    '大雨': 'meteocons:rain-fill',
-    '暴雨': 'meteocons:thunderstorms-rain-fill',
-    '小雪': 'meteocons:snow-fill',
-    '中雪': 'meteocons:snow-fill',
-    '雨夹雪': 'meteocons:sleet-fill',
+// 季度 AQI 箱线图
+const boxplotOption = computed(() => {
+  const quarters = { 'Q1 春': [], 'Q2 夏': [], 'Q3 秋': [], 'Q4 冬': [] }
+  history.value.forEach(r => {
+    if (!r.aqi || !r.date) return
+    const month = parseInt(r.date.slice(5, 7))
+    if (month >= 3 && month <= 5) quarters['Q1 春'].push(r.aqi)
+    else if (month >= 6 && month <= 8) quarters['Q2 夏'].push(r.aqi)
+    else if (month >= 9 && month <= 11) quarters['Q3 秋'].push(r.aqi)
+    else quarters['Q4 冬'].push(r.aqi)
+  })
+
+  const labels = Object.keys(quarters)
+  const hasData = labels.some(k => quarters[k].length >= 3)
+  if (!hasData) return { graphic: { type: 'text', left: 'center', top: 'middle', style: { text: '数据不足，建议选择更长周期', fill: '#999' } } }
+
+  // 计算箱线图五数概括
+  function calcBox(arr) {
+    if (arr.length < 3) return [0, 0, 0, 0, 0]
+    arr.sort((a, b) => a - b)
+    const q1 = arr[Math.floor(arr.length * 0.25)]
+    const median = arr[Math.floor(arr.length * 0.5)]
+    const q3 = arr[Math.floor(arr.length * 0.75)]
+    const iqr = q3 - q1
+    const min = Math.max(arr[0], q1 - 1.5 * iqr)
+    const max = Math.min(arr[arr.length - 1], q3 + 1.5 * iqr)
+    return [min, q1, median, q3, max]
   }
-  return map[condition] || 'meteocons:partly-cloudy-day-fill'
+
+  const boxData = labels.map(k => calcBox(quarters[k]))
+  const sampleCounts = labels.map(k => quarters[k].length)
+  const colors = ['#2d6a4f', '#a8743f', '#c86b4b', '#1e5c5a']
+
+  return {
+    tooltip: {
+      trigger: 'item',
+      formatter: function(p) {
+        const idx = p.dataIndex
+        const d = boxData[idx]
+        const name = labels[idx]
+        if (!d) return ''
+        return `<b>${name}</b> (${sampleCounts[idx]}天)<br/>最大: ${d[4]}<br/>Q3: ${d[3]}<br/>中位数: ${d[2]}<br/>Q1: ${d[1]}<br/>最小: ${d[0]}`
+      },
+    },
+    grid: { left: 55, right: 20, top: 20, bottom: 40 },
+    xAxis: { type: 'category', data: labels, axisLabel: { color: '#9bb0c8', fontWeight: 'bold' } },
+    yAxis: { type: 'value', name: 'AQI', nameTextStyle: { color: '#9bb0c8' }, splitLine: { lineStyle: { color: 'rgba(124,154,188,0.12)' } } },
+    series: [{
+      type: 'boxplot',
+      data: boxData.map((d, i) => ({ value: d, itemStyle: { color: 'rgba(30,92,90,0.12)', borderColor: colors[i], borderWidth: 2 } })),
+    }],
+  }
+})
+
+import clearSvg from '@/assets/weather/clear.svg'
+import partlyCloudySvg from '@/assets/weather/partly-cloudy.svg'
+import overcastSvg from '@/assets/weather/overcast.svg'
+import fogSvg from '@/assets/weather/fog.svg'
+import hazeSvg from '@/assets/weather/haze.svg'
+import dustSvg from '@/assets/weather/dust.svg'
+import drizzleSvg from '@/assets/weather/drizzle.svg'
+import rainSvg from '@/assets/weather/rain.svg'
+import heavyRainSvg from '@/assets/weather/heavy-rain.svg'
+import thunderstormSvg from '@/assets/weather/thunderstorm.svg'
+import snowSvg from '@/assets/weather/snow.svg'
+import heavySnowSvg from '@/assets/weather/heavy-snow.svg'
+import sleetSvg from '@/assets/weather/sleet.svg'
+
+function weatherIcon(condition) {
+  if (!condition) return overcastSvg
+  const key = String(condition).trim()
+  const map = {
+    '晴': clearSvg, '晴间多云': partlyCloudySvg, '多云': partlyCloudySvg,
+    '阴': overcastSvg, '雾': fogSvg, '薄雾': fogSvg, '霾': hazeSvg,
+    '浮尘': dustSvg, '扬沙': dustSvg, '沙尘暴': dustSvg,
+    '阵雨': rainSvg, '雷阵雨': thunderstormSvg, '毛毛雨': drizzleSvg,
+    '小雨': drizzleSvg, '中雨': rainSvg, '大雨': heavyRainSvg,
+    '暴雨': thunderstormSvg, '大暴雨': thunderstormSvg, '特大暴雨': thunderstormSvg,
+    '冻雨': sleetSvg, '小雪': snowSvg, '中雪': snowSvg,
+    '大雪': heavySnowSvg, '暴雪': heavySnowSvg, '阵雪': snowSvg, '雨夹雪': sleetSvg,
+  }
+  if (map[key]) return map[key]
+  if (key.includes('雷')) return thunderstormSvg
+  if (key.includes('暴雨')) return thunderstormSvg
+  if (key.includes('大雨')) return heavyRainSvg
+  if (key.includes('雨夹雪')) return sleetSvg
+  if (key.includes('大雪') || key.includes('暴雪')) return heavySnowSvg
+  if (key.includes('雪')) return snowSvg
+  if (key.includes('雨')) return rainSvg
+  if (key.includes('雾')) return fogSvg
+  if (key.includes('霾')) return hazeSvg
+  if (key.includes('尘') || key.includes('沙')) return dustSvg
+  if (key.includes('多云') || key.includes('晴')) return partlyCloudySvg
+  if (key.includes('阴')) return overcastSvg
+  return overcastSvg
+}
+
+function escapeCSVCell(value, forceText = false) {
+  const text = value == null ? '' : String(value)
+  const normalized = forceText ? `="${text.replace(/"/g, '""')}"` : text
+  if (/[",\n\r]/.test(normalized)) return `"${normalized.replace(/"/g, '""')}"`
+  return normalized
 }
 
 function exportCSV() {
   const headers = ['日期', 'AQI', 'PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3', '温度', '湿度']
-  const rows = history.value.map(r => [r.date, r.aqi, r.pm25, r.pm10, r.so2, r.no2, r.co, r.o3, r.temperature, r.humidity])
+  const rows = history.value.map(r => [
+    escapeCSVCell(r.date, true),
+    escapeCSVCell(r.aqi),
+    escapeCSVCell(r.pm25),
+    escapeCSVCell(r.pm10),
+    escapeCSVCell(r.so2),
+    escapeCSVCell(r.no2),
+    escapeCSVCell(r.co),
+    escapeCSVCell(r.o3),
+    escapeCSVCell(r.temperature),
+    escapeCSVCell(r.humidity),
+  ])
   const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = `${cityName.value}_air_quality_report.csv`
   a.click()
+  URL.revokeObjectURL(a.href)
 }
 
 async function loadReport() {
@@ -305,11 +479,25 @@ async function loadReport() {
   if (!id) return
   loading.value = true
   try {
-    const [hist, fc] = await Promise.all([
-      airQualityApi.getHistory({ city_id: id, days: Number(period.value) }),
+    const days = Number(period.value)
+    const [hist, fc, wh] = await Promise.all([
+      airQualityApi.getHistory({ city_id: id, days }),
       weatherApi.getForecast(id, 7),
+      weatherApi.getHistory(id, Math.min(days, 90)),
     ])
-    history.value = hist
+    // 将天气历史按日期合并到空气质量数据（补充温度湿度）
+    const weatherMap = {}
+    for (const w of (wh.history || wh || [])) {
+      if (w.date) weatherMap[w.date] = w
+    }
+    history.value = (hist || []).map(r => {
+      const w = weatherMap[r.date]
+      return {
+        ...r,
+        temperature: r.temperature ?? (w ? w.tempMean : null),
+        humidity: r.humidity ?? (w ? w.humidity : null),
+      }
+    })
     forecast.value = fc.forecast || []
   } finally {
     loading.value = false
@@ -329,37 +517,135 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.report-page { min-height: 100vh; background: var(--bg-page, #eae6e1); }
-.page-title { font-size: 16px; font-weight: 700; }
-.ctrl-bar { padding: 12px 24px; }
-
-/* 不对称统计卡片 */
-.stat-row { display: flex; gap: 12px; padding: 0 24px 8px; }
-.stat-row-2 { padding-top: 0; padding-bottom: 16px; }
-.stat-card { text-align: left; }
-.stat-big { flex: 1.4; }
-.stat-mid { flex: 1; }
-.stat-sm { flex: 0.7; }
-.stat-val { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
-.stat-label { font-size: 12px; color: var(--text-muted, #8a8a8a); margin-top: 4px; }
-
-/* 不对称图表 */
-.charts-row { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; padding: 0 24px 16px; }
-
-/* 天气预报卡片 */
-.forecast-row { display: flex; gap: 12px; overflow-x: auto; padding: 4px 0; }
-.fc-card {
-  flex: 0 0 120px; text-align: center;
-  background: var(--bg-page, #eae6e1); border-radius: 14px; padding: 14px 8px;
-  transition: transform 0.3s var(--bounce, cubic-bezier(0.34, 1.56, 0.64, 1));
+.report-page {
+  padding-bottom: 28px;
 }
-.fc-card:hover { transform: translateY(-3px) rotate(-1deg); }
-.fc-day { font-size: 13px; font-weight: 600; color: var(--text-primary, #2c2c2c); }
-.fc-date { font-size: 11px; color: var(--text-muted, #8a8a8a); }
-.fc-icon { color: var(--primary, #0d9488); margin: 4px 0; }
-.fc-text { font-size: 12px; color: var(--text-secondary, #5a5a5a); }
-.fc-temp { margin-top: 6px; }
-.temp-max { font-size: 16px; font-weight: 700; color: var(--text-primary, #2c2c2c); }
-.temp-min { font-size: 13px; color: var(--text-muted, #8a8a8a); margin-left: 4px; }
-.fc-detail { font-size: 10px; color: var(--text-muted, #8a8a8a); margin-top: 6px; display: flex; justify-content: center; gap: 6px; align-items: center; }
+
+/* 卡片使用全局暗色主题，不再单独覆盖 */
+
+.intro-topbar,
+.card-header,
+.table-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.intro-kicker {
+  font-family: var(--aq-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--aq-accent);
+}
+
+.intro-title {
+  margin-top: 10px;
+  font-family: var(--aq-display);
+  font-size: 32px;
+  line-height: 1.14;
+  color: var(--aq-ink);
+}
+
+.stat-row {
+  display: flex;
+  gap: 12px;
+}
+
+.stat-row-2 {
+  margin-top: 12px;
+}
+
+.stat-card {
+  text-align: left;
+}
+
+.stat-big {
+  flex: 1.4;
+}
+
+.stat-mid {
+  flex: 1;
+}
+
+.stat-sm {
+  flex: 0.7;
+}
+
+.stat-val {
+  font-family: var(--aq-display);
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.stat-label,
+.card-header p,
+.table-header p,
+.fc-text,
+.fc-detail,
+.fc-date,
+.temp-min {
+  color: var(--aq-ink-soft);
+}
+
+.report-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+
+.forecast-row {
+  display: flex;
+  justify-content: space-around;
+}
+
+.fc-card {
+  flex: 0 0 132px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(39, 211, 195, 0.06), rgba(110, 168, 255, 0.05));
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px 10px;
+}
+
+.fc-day {
+  font-weight: 700;
+  color: var(--aq-ink);
+}
+
+.fc-icon {
+  color: var(--aq-primary);
+  margin: 6px 0;
+}
+
+.fc-temp {
+  margin-top: 6px;
+}
+
+.temp-max {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--aq-ink);
+}
+
+.table-header span,
+.card-header span {
+  color: var(--aq-ink);
+  font-weight: 700;
+}
+
+@media (max-width: 1200px) {
+  .intro-topbar,
+  .stat-row,
+  .charts-row {
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+}
 </style>

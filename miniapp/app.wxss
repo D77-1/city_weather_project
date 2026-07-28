@@ -1,32 +1,57 @@
 page {
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'SF Pro Display', sans-serif;
-  background: linear-gradient(180deg, #f0f4f8 0%, #e8edf5 100%);
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(168, 116, 63, 0.12), transparent 24%),
+    linear-gradient(180deg, #f4efe7 0%, #ebe3d7 100%);
   font-size: 28rpx;
-  color: #1e293b;
+  color: #1a2529;
 }
 
-/* 通用卡片 — 毛玻璃效果 */
+page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 31rpx,
+    rgba(26, 37, 41, 0.028) 32rpx
+  );
+  opacity: 0.45;
+}
+
 .card {
   margin: 20rpx 24rpx;
-  background: rgba(255, 255, 255, 0.88);
-  border-radius: 20rpx;
-  padding: 28rpx;
-  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
-  backdrop-filter: blur(8px);
-  border: 1rpx solid rgba(226, 232, 240, 0.6);
-}
-.card-title {
-  font-size: 30rpx;
-  font-weight: 700;
-  margin-bottom: 16rpx;
-  color: #1e293b;
+  background: rgba(252, 249, 243, 0.88);
+  border-radius: 24rpx;
+  padding: 30rpx;
+  box-shadow: 0 10rpx 28rpx rgba(54, 45, 32, 0.06);
+  border: 1rpx solid rgba(26, 37, 41, 0.08);
+  backdrop-filter: blur(12rpx);
+  position: relative;
+  overflow: hidden;
 }
 
-/* 天气图标样式 — 替代 emoji */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2rpx;
+  background: linear-gradient(90deg, transparent, rgba(168, 116, 63, 0.35), transparent);
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-bottom: 18rpx;
+  color: #1a2529;
+}
+
 .weather-icon {
   width: 56rpx;
   height: 56rpx;
-  border-radius: 12rpx;
+  border-radius: 14rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,17 +59,16 @@ page {
   font-weight: 700;
   color: #fff;
 }
-.weather-icon.sunny { background: linear-gradient(135deg, #f59e0b, #f97316); }
-.weather-icon.cloudy { background: linear-gradient(135deg, #94a3b8, #64748b); }
-.weather-icon.overcast { background: linear-gradient(135deg, #64748b, #475569); }
-.weather-icon.rain { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-.weather-icon.heavy-rain { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
-.weather-icon.snow { background: linear-gradient(135deg, #a5b4fc, #818cf8); }
-.weather-icon.thunder { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
-.weather-icon.fog { background: linear-gradient(135deg, #cbd5e1, #94a3b8); }
+.weather-icon.sunny { background: linear-gradient(135deg, #d8a35d, #c97d35); }
+.weather-icon.cloudy { background: linear-gradient(135deg, #8d9a95, #6f7f79); }
+.weather-icon.overcast { background: linear-gradient(135deg, #6e7f84, #58696d); }
+.weather-icon.rain { background: linear-gradient(135deg, #3f7f8d, #1e5c5a); }
+.weather-icon.heavy-rain { background: linear-gradient(135deg, #27586d, #193844); }
+.weather-icon.snow { background: linear-gradient(135deg, #b9c7d5, #8da0b5); }
+.weather-icon.thunder { background: linear-gradient(135deg, #7d6a8f, #5b4e69); }
+.weather-icon.fog { background: linear-gradient(135deg, #c9cdc9, #9ca59f); }
 
-/* 数字等宽 */
 .num {
-  font-family: 'DIN Alternate', 'Menlo', monospace;
+  font-family: 'DIN Alternate', 'IBM Plex Mono', 'Menlo', monospace;
   font-variant-numeric: tabular-nums;
 }

@@ -28,6 +28,9 @@ def get_ai_advice():
     session_id = data.get('sessionId', str(uuid.uuid4()))
     city_id = data.get('cityId')
     context_data = data.get('context')
+    source = data.get('source', 'web')
+    if source not in ('web', 'miniapp'):
+        source = 'web'
 
     # 调用通义千问
     result = chat_with_qwen(message, context_data)
@@ -41,7 +44,7 @@ def get_ai_advice():
         context_data=context_data,
         tokens_used=result['tokens'],
         response_time_ms=result['elapsed_ms'],
-        source='web',
+        source=source,
     )
     db.session.add(log)
     db.session.commit()

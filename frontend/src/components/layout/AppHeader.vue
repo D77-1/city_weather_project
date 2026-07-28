@@ -1,48 +1,95 @@
 <template>
   <el-header class="app-header">
-    <div class="header-left" @click="$router.push('/')" style="cursor: pointer">
-      <h1 class="title">城市空气质量可视化系统</h1>
+    <div class="header-layer"></div>
+    <div class="header-left" @click="$router.push('/')">
+      <!-- <div class="brand-mark">
+        <span class="brand-dot"></span>
+        <span class="brand-dot brand-dot-alt"></span>
+      </div> -->
+      <div class="brand-copy">
+        <span class="brand-kicker">Air Research Console</span>
+        <h1 class="title">城市空气质量可视化系统</h1>
+      </div>
     </div>
+
     <div class="header-center">
-      <el-select
-        v-model="cityStore.currentCityId"
-        placeholder="请选择城市"
-        filterable
-        style="width: 200px"
-        @change="onCityChange"
-      >
-        <el-option
-          v-for="city in cityStore.cities"
-          :key="city.id"
-          :label="city.name"
-          :value="city.id"
-        />
-      </el-select>
+      <div class="city-control">
+        <span class="control-label">观测城市</span>
+        <el-select
+          v-model="cityStore.currentCityId"
+          placeholder="请选择城市"
+          filterable
+          class="city-select"
+          @change="onCityChange"
+        >
+          <el-option
+            v-for="city in cityStore.cities"
+            :key="city.id"
+            :label="city.name"
+            :value="city.id"
+          />
+        </el-select>
+      </div>
     </div>
+
     <div class="header-right">
-      <span class="date-text">{{ currentDate }}</span>
-      <el-button
-        :icon="themeStore.isDark ? 'Sunny' : 'Moon'"
-        circle
-        size="small"
-        class="theme-btn"
-        @click="themeStore.toggle()"
-      />
-      <el-button text size="small" class="nav-link" @click="$router.push('/analysis')">数据分析</el-button>
-      <el-button text size="small" class="nav-link" @click="$router.push('/compare')">城市对比</el-button>
-      <el-button text size="small" class="nav-link" @click="$router.push('/report')">数据报告</el-button>
-      <el-button text size="small" class="nav-link" @click="$router.push('/anomaly')">异常管理</el-button>
+      <div class="meta-chip date-chip">
+        <span class="chip-label">DATE</span>
+        <span class="chip-value">{{ currentDate }}</span>
+      </div>
+      <div class="nav-group">
+        <el-button text size="small" class="nav-link" @click="$router.push('/analysis')">预测分析</el-button>
+        <el-button text size="small" class="nav-link" @click="$router.push('/compare')">城市对比</el-button>
+        <el-button text size="small" class="nav-link" @click="$router.push('/report')">数据报告</el-button>
+        <el-button text size="small" class="nav-link" @click="$router.push('/anomaly')">异常管理</el-button>
+      </div>
+
+      <el-dropdown
+        v-if="userStore.isLoggedIn"
+        trigger="click"
+        placement="bottom-end"
+        @command="onUserCommand"
+      >
+        <div class="user-chip" title="账号菜单">
+          <span class="user-avatar">{{ avatarLetter }}</span>
+          <div class="user-meta">
+            <span class="user-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</span>
+            <span class="user-role" :class="{ 'role-admin': userStore.isAdmin }">
+              {{ userStore.isAdmin ? 'ADMIN' : 'USER' }}
+            </span>
+          </div>
+        </div>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item v-if="userStore.isAdmin" command="admin">
+              <el-icon><Setting /></el-icon>进入管理后台
+            </el-dropdown-item>
+            <el-dropdown-item command="logout" divided>
+              <el-icon><SwitchButton /></el-icon>退出登录
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+
+      <router-link v-else to="/login" class="user-login-link" title="登录管理员">
+        <el-icon><User /></el-icon>
+        <span>登录</span>
+      </router-link>
     </div>
   </el-header>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { Setting, SwitchButton, User } from '@element-plus/icons-vue'
 import { useCityStore } from '@/stores/city'
-import { useThemeStore } from '@/stores/theme'
+import { useUserStore } from '@/stores/user'
 
 const cityStore = useCityStore()
-const themeStore = useThemeStore()
+const userStore = useUserStore()
+const router = useRouter()
 const emit = defineEmits(['cityChange'])
 
 const currentDate = computed(() => {
@@ -50,64 +97,332 @@ const currentDate = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
+const avatarLetter = computed(() => {
+  const name = userStore.userInfo?.nickname || userStore.userInfo?.username || ''
+  return name.slice(0, 1).toUpperCase() || 'A'
+})
+
 function onCityChange(val) {
   emit('cityChange', val)
+}
+
+function onUserCommand(cmd) {
+  if (cmd === 'admin') {
+    router.push('/admin')
+  } else if (cmd === 'logout') {
+    userStore.logout()
+    ElMessage.success('已退出登录')
+    if (router.currentRoute.value.path.startsWith('/admin')) {
+      router.push('/')
+    }
+  }
 }
 </script>
 
 <style scoped>
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(280px, 1.5fr) minmax(220px, 0.9fr) minmax(320px, 1.4fr);
+  align-items: center;
+  gap: 18px;
+  min-height: 78px;
+  padding: 14px 24px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.header-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(39, 211, 195, 0.06), transparent 24%),
+    linear-gradient(90deg, transparent, rgba(110, 168, 255, 0.08) 78%, transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 70%);
+  pointer-events: none;
+}
+
+.header-left,
+.header-center,
+.header-right {
+  position: relative;
+  z-index: 1;
+}
+
+.header-left {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, #1b2a2a 0%, #2c3e3e 50%, #1a2e2e 100%);
-  color: #e0e6e4;
-  padding: 0 24px;
-  height: 60px;
-  border-bottom: 1px solid #3a4e4c;
+  gap: 14px;
+  cursor: pointer;
+  min-width: 0;
 }
-.header-left {
-  flex: 1.5;
+
+.brand-mark {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid rgba(127, 246, 234, 0.2);
+  background: linear-gradient(135deg, rgba(39, 211, 195, 0.14), rgba(110, 168, 255, 0.1));
+  box-shadow: inset 0 0 24px rgba(127, 246, 234, 0.08);
 }
+
+.brand-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  top: 8px;
+  left: 8px;
+  box-shadow: 0 0 18px rgba(127, 246, 234, 0.5);
+}
+
+.brand-dot-alt {
+  width: 10px;
+  height: 10px;
+  top: auto;
+  left: auto;
+  right: 8px;
+  bottom: 8px;
+  background: var(--accent-light);
+  box-shadow: 0 0 18px rgba(110, 168, 255, 0.5);
+}
+
+.brand-copy {
+  min-width: 0;
+}
+
+.brand-kicker {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 1px;
-  background: linear-gradient(90deg, #14b8a6, #e07a5f);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 .header-center {
-  flex: 0.8;
   display: flex;
   justify-content: center;
 }
+
+.city-control {
+  width: min(100%, 280px);
+  padding: 5px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  background: rgba(8, 20, 34, 0.7);
+  box-shadow: inset 0 0 24px rgba(39, 211, 195, 0.04);
+}
+
+.control-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.city-select {
+  width: 100%;
+  
+}
+
 .header-right {
-  flex: 1.2;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
 }
-.date-text {
+
+.meta-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  min-width: 120px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: rgba(8, 20, 34, 0.7);
+}
+
+.chip-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+
+.chip-value {
   font-size: 13px;
-  color: #6a7a76;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
 }
-.theme-btn {
-  color: #e0e6e4 !important;
-  border-color: #3a4e4c !important;
-  background: transparent !important;
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: rgba(8, 20, 34, 0.72);
+  /* flex-wrap: wrap; */
+  justify-content: flex-end;
 }
-.theme-btn:hover {
-  background: rgba(255,255,255,0.08) !important;
-  transform: rotate(20deg);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+
 .nav-link {
-  color: #a0b0ac !important;
+  min-height: 34px;
+  padding: 0 12px !important;
+  border-radius: 12px !important;
+  color: var(--text-secondary) !important;
   font-weight: 600;
 }
+
 .nav-link:hover {
-  color: #14b8a6 !important;
+  color: var(--text-primary) !important;
+  background: rgba(39, 211, 195, 0.12) !important;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(8, 20, 34, 0.7);
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.user-chip:hover {
+  border-color: rgba(39, 211, 195, 0.45);
+  background: rgba(10, 26, 42, 0.82);
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #27d3c3, #6ea8ff);
+  color: #041019;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.user-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+
+.user-role.role-admin {
+  color: var(--primary);
+}
+
+.user-login-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(8, 20, 34, 0.7);
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-decoration: none;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+
+.user-login-link:hover {
+  color: var(--text-primary);
+  border-color: rgba(39, 211, 195, 0.45);
+  background: rgba(10, 26, 42, 0.82);
+}
+
+@media (max-width: 1200px) {
+  .app-header {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    height: auto;
+    padding: 16px 20px;
+  }
+
+  .header-center,
+  .header-right {
+    justify-content: flex-start;
+  }
+
+  .header-right {
+    flex-wrap: wrap;
+  }
+
+  .nav-group {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 14px 14px 16px;
+  }
+
+  .header-left {
+    align-items: flex-start;
+  }
+
+  .title {
+    font-size: 18px;
+    white-space: normal;
+  }
+
+  .city-control,
+  .meta-chip,
+  .nav-group {
+    width: 100%;
+  }
+
+  .nav-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

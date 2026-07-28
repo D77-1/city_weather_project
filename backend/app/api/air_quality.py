@@ -14,19 +14,16 @@ def get_latest_air_quality():
     获取各城市最新一天的空气质量数据（城市级聚合均值）
     返回值按 AQI 降序排列
     """
-    # 子查询: 找到最新的记录日期
-    latest_date_sub = db.session.query(
-        func.max(AirQualityRecord.record_time)
-    ).scalar()
+    latest_per_city = db.session.query(
+        AirQualityRecord.city_id.label('city_id'),
+        func.max(AirQualityRecord.record_time).label('latest_time'),
+    ).group_by(AirQualityRecord.city_id).subquery()
 
-    if not latest_date_sub:
-        return success([])
-
-    # 按城市聚合最新一天的各站点平均值
     rows = db.session.query(
         AirQualityRecord.city_id,
         City.name.label('city_name'),
         City.province,
+        latest_per_city.c.latest_time.label('record_time'),
         func.round(func.avg(AirQualityRecord.aqi), 0).label('aqi'),
         func.round(func.avg(AirQualityRecord.pm25), 1).label('pm25'),
         func.round(func.avg(AirQualityRecord.pm10), 1).label('pm10'),
@@ -39,15 +36,20 @@ def get_latest_air_quality():
         func.round(func.avg(AirQualityRecord.wind_speed), 1).label('wind_speed'),
         func.round(func.avg(AirQualityRecord.rainfall), 1).label('rainfall'),
     ).join(City, AirQualityRecord.city_id == City.id) \
-     .filter(AirQualityRecord.record_time == latest_date_sub) \
-     .group_by(AirQualityRecord.city_id, City.name, City.province) \
+     .join(latest_per_city, latest_per_city.c.city_id == AirQualityRecord.city_id) \
+     .filter(AirQualityRecord.record_time == latest_per_city.c.latest_time) \
+     .group_by(AirQualityRecord.city_id, City.name, City.province, latest_per_city.c.latest_time) \
      .order_by(desc('aqi')) \
      .all()
 
-    # 获取每个城市的一条记录用于读取非聚合字段(风向、天气)
+    if not rows:
+        return success([])
+
     weather_detail = {}
-    detail_rows = AirQualityRecord.query.filter(
-        AirQualityRecord.record_time == latest_date_sub
+    detail_rows = db.session.query(AirQualityRecord).join(
+        latest_per_city,
+        (AirQualityRecord.city_id == latest_per_city.c.city_id) &
+        (AirQualityRecord.record_time == latest_per_city.c.latest_time)
     ).all()
     for dr in detail_rows:
         if dr.city_id not in weather_detail:
@@ -75,7 +77,8 @@ def get_latest_air_quality():
             'rainfall': float(r.rainfall) if r.rainfall else 0,
             'weatherCondition': wd.weather_condition if wd else None,
             'qualityLevel': _aqi_to_level(aqi_val),
-            'recordDate': latest_date_sub.strftime('%Y-%m-%d'),
+            'recordDate': r.record_time.strftime('%Y-%m-%d'),
+            'dataSource': 'local_db_daily_avg',
         })
 
     return success(data)
@@ -130,13 +133,13 @@ def get_history():
     for r in rows:
         data.append({
             'date': str(r.date),
-            'aqi': int(r.aqi) if r.aqi else 0,
-            'pm25': float(r.pm25) if r.pm25 else 0,
-            'pm10': float(r.pm10) if r.pm10 else 0,
-            'so2': float(r.so2) if r.so2 else 0,
-            'no2': float(r.no2) if r.no2 else 0,
-            'co': float(r.co) if r.co else 0,
-            'o3': float(r.o3) if r.o3 else 0,
+            'aqi': int(r.aqi) if r.aqi else None,
+            'pm25': float(r.pm25) if r.pm25 else None,
+            'pm10': float(r.pm10) if r.pm10 else None,
+            'so2': float(r.so2) if r.so2 else None,
+            'no2': float(r.no2) if r.no2 else None,
+            'co': float(r.co) if r.co else None,
+            'o3': float(r.o3) if r.o3 else None,
             'temperature': float(r.temperature) if r.temperature else None,
             'humidity': int(r.humidity) if r.humidity else None,
             'windSpeed': float(r.wind_speed) if r.wind_speed else None,
@@ -158,12 +161,10 @@ def get_ranking():
     limit = request.args.get('limit', 10, type=int)
     limit = min(limit, 50)
 
-    latest_date = db.session.query(
-        func.max(AirQualityRecord.record_time)
-    ).scalar()
-
-    if not latest_date:
-        return success([])
+    latest_per_city = db.session.query(
+        AirQualityRecord.city_id.label('city_id'),
+        func.max(AirQualityRecord.record_time).label('latest_time'),
+    ).group_by(AirQualityRecord.city_id).subquery()
 
     avg_aqi = func.round(func.avg(AirQualityRecord.aqi), 0).label('avg_aqi')
     order_col = avg_aqi.asc() if order == 'asc' else avg_aqi.desc()
@@ -172,8 +173,9 @@ def get_ranking():
         AirQualityRecord.city_id,
         City.name.label('city_name'),
         avg_aqi,
-    ).join(City, AirQualityRecord.city_id == City.id) \
-     .filter(AirQualityRecord.record_time == latest_date) \
+    ).join(latest_per_city, latest_per_city.c.city_id == AirQualityRecord.city_id) \
+     .join(City, AirQualityRecord.city_id == City.id) \
+     .filter(AirQualityRecord.record_time == latest_per_city.c.latest_time) \
      .group_by(AirQualityRecord.city_id, City.name) \
      .order_by(order_col) \
      .limit(limit) \
@@ -213,12 +215,10 @@ def get_map_data():
     获取地图热力图数据: 每个城市最新 AQI + 坐标
     供 ECharts 中国地图散点/热力图使用
     """
-    latest_date = db.session.query(
-        func.max(AirQualityRecord.record_time)
-    ).scalar()
-
-    if not latest_date:
-        return success([])
+    latest_per_city = db.session.query(
+        AirQualityRecord.city_id.label('city_id'),
+        func.max(AirQualityRecord.record_time).label('latest_time'),
+    ).group_by(AirQualityRecord.city_id).subquery()
 
     rows = db.session.query(
         City.id,
@@ -226,10 +226,17 @@ def get_map_data():
         City.latitude,
         City.longitude,
         func.round(func.avg(AirQualityRecord.aqi), 0).label('aqi'),
-    ).join(AirQualityRecord, City.id == AirQualityRecord.city_id) \
-     .filter(AirQualityRecord.record_time == latest_date) \
+    ).join(latest_per_city, latest_per_city.c.city_id == City.id) \
+     .join(
+         AirQualityRecord,
+         (AirQualityRecord.city_id == latest_per_city.c.city_id) &
+         (AirQualityRecord.record_time == latest_per_city.c.latest_time)
+     ) \
      .group_by(City.id, City.name, City.latitude, City.longitude) \
      .all()
+
+    if not rows:
+        return success([])
 
     data = [{
         'cityId': r.id,

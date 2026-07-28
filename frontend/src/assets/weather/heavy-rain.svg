@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="hr_cloud" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b7cce7"/>
+      <stop offset="100%" stop-color="#5a7ba4"/>
+    </linearGradient>
+  </defs>
+  <path d="M 14 34 Q 7 34 7 27 Q 7 19 16 18 Q 18 10 28 10 Q 39 10 41 18 Q 48 18 50 26 Q 56 26 56 33 Q 56 40 49 40 L 16 40 Q 14 40 14 34 Z"
+        fill="url(#hr_cloud)" stroke="#3a5878" stroke-width="1.4" stroke-linejoin="round"/>
+  <g fill="#4a90ff">
+    <path d="M 16 45 q -3 6 0 8 q 3 0 0 -8 Z"/>
+    <path d="M 24 48 q -3 6 0 8 q 3 0 0 -8 Z"/>
+    <path d="M 32 45 q -3 6 0 8 q 3 0 0 -8 Z"/>
+    <path d="M 40 48 q -3 6 0 8 q 3 0 0 -8 Z"/>
+    <path d="M 48 45 q -3 6 0 8 q 3 0 0 -8 Z"/>
+    <path d="M 20 56 q -2 4 0 6 q 2 0 0 -6 Z"/>
+    <path d="M 44 56 q -2 4 0 6 q 2 0 0 -6 Z"/>
+  </g>
+</svg>
